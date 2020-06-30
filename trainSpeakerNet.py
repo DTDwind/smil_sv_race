@@ -55,7 +55,7 @@ parser.add_argument('--nOut', type=int,         default=512,    help='Embedding 
 
 args = parser.parse_args();
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 ## Initialise directories
 model_save_path     = args.save_path+"/model"

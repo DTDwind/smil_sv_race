@@ -9,8 +9,8 @@ python3 trainSpeakerNet.py \
         --max_frames 200  \
         --nSpeakers 2  \
         --train_list data_list/vox2020Baseline/train_list.txt  \
-        --train_path dataset/voxceleb2_dev/aac  \
-        --test_path dataset/voxceleb1_test/wav  \
+        --train_path /share/nas165/chengsam/vox2/voxceleb2_dev/aac  \
+        --test_path /share/nas165/chengsam/vox1/voxceleb1_test/wav  \
         --test_list data_list/vox2020Baseline/veri_test.txt \
         --test_interval 1 \
         --nDataLoaderThread 10 \

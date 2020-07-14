@@ -35,7 +35,7 @@ class ResNetSE(nn.Module):
         if self.encoder_type == "SAP":
             self.sap_linear = nn.Linear(num_filters[3] * block.expansion, num_filters[3] * block.expansion)
             self.attention = self.new_parameter(num_filters[3] * block.expansion, 1)
-            out_dim = num_filters[3] * block.expansion
+            out_dim = num_filters[3] * block.expansion  
         else:
             raise ValueError('Undefined encoder')
 
@@ -83,8 +83,10 @@ class ResNetSE(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
+        #print("layer4 size:")------>torch.Size([100, 128, 5, 51])
         x = self.avgpool(x)
-
+        #print("X size:")----->torch.Size([100, 128, 1, 51])
+ 
         if self.encoder_type == "SAP":
             x = x.permute(0, 2, 1, 3)
             x = x.squeeze(dim=1).permute(0, 2, 1)  # batch * L * D
@@ -94,6 +96,7 @@ class ResNetSE(nn.Module):
             x = torch.sum(x * w, dim=1)
 
         x = x.view(x.size()[0], -1)
+        #x = x.view(2550,128)
         x = self.fc(x)
 
         return x
@@ -103,4 +106,6 @@ def ResNetSE34L(nOut=256, **kwargs):
     # Number of filters
     num_filters = [16, 32, 64, 128]
     model = ResNetSE(SEBasicBlock, [3, 4, 6, 3], num_filters, nOut, **kwargs)
+    # for param in model.parameters():
+    #     param.requires_grad = False
     return model

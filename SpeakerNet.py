@@ -15,7 +15,8 @@ from loss.arcface import AAMSoftmax
 from loss.softmax import SoftmaxLoss
 from loss.protoloss import ProtoLoss
 from loss.pairwise import PairwiseLoss
-
+from models.LSTM import *
+import sys
 class SpeakerNet(nn.Module):
 
     def __init__(self, max_frames, lr = 0.0001, margin = 1, scale = 1, hard_rank = 0, hard_prob = 0, model="alexnet50", nOut = 512, nSpeakers = 1000, optimizer = 'adam', encoder_type = 'SAP', normalize = True, trainfunc='contrastive', **kwargs):
@@ -25,7 +26,8 @@ class SpeakerNet(nn.Module):
 
         SpeakerNetModel = importlib.import_module('models.'+model).__getattribute__(model)
         self.__S__ = SpeakerNetModel(**argsdict).cuda();
-
+        self.fc = th_Fc(nOut ,nOut).cuda()
+        
         if trainfunc == 'angleproto':
             self.__L__ = AngleProtoLoss().cuda()
             self.__train_normalize__    = True
@@ -55,6 +57,7 @@ class SpeakerNet(nn.Module):
             self.__train_normalize__    = True
             self.__test_normalize__     = True
         elif trainfunc == 'contrastive':
+          
             self.__L__ = PairwiseLoss(loss_func='contrastive', hard_rank=hard_rank, hard_prob=hard_prob, margin=margin).cuda()
             self.__train_normalize__    = True
             self.__test_normalize__     = True
@@ -62,7 +65,14 @@ class SpeakerNet(nn.Module):
             raise ValueError('Undefined loss.')
 
         if optimizer == 'adam':
-            self.__optimizer__ = torch.optim.Adam(self.parameters(), lr = lr);
+       
+            #self.__optimizer__ = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()),lr = lr);
+            #self.__optimizer__ = torch.optim.Adam(self.parameters(), lr = lr);
+            
+            self.__optimizer__ = torch.optim.Adam([{'params':self.__S__.parameters(),'lr':1e-6},
+                                    {'params':self.fc.parameters(),'lr':0.001}]);
+            # https://blog.csdn.net/qq_34914551/article/details/87699317
+           
         elif optimizer == 'sgd':
             self.__optimizer__ = torch.optim.SGD(self.parameters(), lr = lr, momentum = 0.9, weight_decay=5e-5);
         else:
@@ -99,13 +109,15 @@ class SpeakerNet(nn.Module):
                 if self.__train_normalize__:
                     outp   = F.normalize(outp, p=2, dim=1)
                 feat.append(outp)
-
+        
             feat = torch.stack(feat,dim=1).squeeze()
-
+            
+            out=self.fc.forward(feat)
+            
             label   = torch.LongTensor(data_label).cuda()
-
-            nloss, prec1 = self.__L__.forward(feat,label)
-
+            
+            nloss, prec1 = self.__L__.forward(out,label)
+       
             loss    += nloss.detach().cpu();
             top1    += prec1
             counter += 1;

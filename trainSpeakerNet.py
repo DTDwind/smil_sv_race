@@ -126,7 +126,7 @@ while(1):
     print(counter)
     print(time.strftime("%Y-%m-%d %H:%M:%S"), it, "Training %s with LR %f..."%(args.model,max(clr)));
    # print(torch.equal(torch.tensor([1, 2]), torch.tensor([1, 2])))
-    
+    #設定requires_grad凍結參數(全連結層沒有凍結、其他有凍結)
     for name, p in s.named_parameters():
         if "fc.fc.weight" in name or "fc.fc.bias" in name:
             p.requires_grad = True
@@ -137,7 +137,7 @@ while(1):
     for name,parameters in s.named_parameters():
         parameters_dict[name]=parameters
     
-   
+    #檢查是否有凍結
     for name,parameters in s.named_parameters():#nn.Module有成员函数parameters()
         if(name=="__S__.fc.bias"):
             if counter == 1:

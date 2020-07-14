@@ -68,7 +68,7 @@ class SpeakerNet(nn.Module):
        
             #self.__optimizer__ = torch.optim.Adam(filter(lambda p: p.requires_grad, self.parameters()),lr = lr);
             #self.__optimizer__ = torch.optim.Adam(self.parameters(), lr = lr);
-            
+            #設定學習率SpeakerNet設定'lr':1e-6、全連結層'lr':0.001
             self.__optimizer__ = torch.optim.Adam([{'params':self.__S__.parameters(),'lr':1e-6},
                                     {'params':self.fc.parameters(),'lr':0.001}]);
             # https://blog.csdn.net/qq_34914551/article/details/87699317

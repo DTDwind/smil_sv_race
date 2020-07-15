@@ -18,12 +18,18 @@ class AngleProtoLoss(nn.Module):
         print('Initialised AngleProto')
 
     def forward(self, x, label=None):
-
-        out_anchor      = torch.mean(x[:,1:,:],1)
+        # print('AngleProtoLoss forward inp x size')
+        # print(x.size()) # x --- [400, 2, 512]
+        # exit()
+        # print('pre out_anchor')
+        # print(x[:,1:,:])
+        out_anchor      = torch.mean(x[:,1:,:],1) # 錨
+        # print('out_anchor')
+        # print(out_anchor)
         out_positive    = x[:,0,:]
         stepsize        = out_anchor.size()[0]
 
-        cos_sim_matrix  = F.cosine_similarity(out_positive.unsqueeze(-1).expand(-1,-1,stepsize),out_anchor.unsqueeze(-1).expand(-1,-1,stepsize).transpose(0,2))
+        cos_sim_matrix  = F.cosine_similarity(out_positive.unsqueeze(-1).expand(-1,-1,stepsize), out_anchor.unsqueeze(-1).expand(-1,-1,stepsize).transpose(0,2))
         torch.clamp(self.w, 1e-6)
         cos_sim_matrix = cos_sim_matrix * self.w + self.b
         

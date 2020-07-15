@@ -88,14 +88,33 @@ class SpeakerNet(nn.Module):
         criterion = torch.nn.CrossEntropyLoss()
         
         for data, data_label in loader:
-
+            # print("data:"+str(data))
+            
+            # print("data len:"+str(len(data)))
+            # print("data[0] size:"+str(data[0].size()))
+            # print("data_label:"+str(data_label))
+            # print("data_label len:"+str(len(data_label)))
+            # exit()
             tstart = time.time()
 
             self.zero_grad();
-
+            # print(data_label)
+            # exit()
             feat = []
             for inp in data:
+                # print('inp')
+                # print(inp)
+                # # print(inp.size())
+                # exit()
+                # print('QAQ')
                 outp      = self.__S__.forward(inp.cuda())
+                # print('outp')
+                # print(outp)
+                # print('outp size')
+                # print(outp.size())
+                
+                # exit()
+
                 if self.__train_normalize__:
                     outp   = F.normalize(outp, p=2, dim=1)
                 feat.append(outp)
@@ -103,7 +122,9 @@ class SpeakerNet(nn.Module):
             feat = torch.stack(feat,dim=1).squeeze()
 
             label   = torch.LongTensor(data_label).cuda()
-
+            # print('__L__ feat')
+            # print(feat.size()) # --- [400, 2, 512]
+            # exit()
             nloss, prec1 = self.__L__.forward(feat,label)
 
             loss    += nloss.detach().cpu();
@@ -189,11 +210,17 @@ class SpeakerNet(nn.Module):
         for idx, file in enumerate(setfiles):
 
             inp1 = loadWAV(os.path.join(test_path,file), self.__max_frames__, evalmode=True, num_eval=num_eval).cuda()
-
+            
+            # inp1 = loadFeat(os.path.join(test_path,file), evalmode=True, num_eval=num_eval).cuda()
+            
             ref_feat = self.__S__.forward(inp1).detach().cpu()
-
+            # print(inp1.size())
+            # print('inp1_feat')
+            # exit()
             filename = '%06d.wav'%idx
-
+            # filename = '%06d.feat.pt'%idx
+            # print('QAQ')
+            # exit()
             if feat_dir == '':
                 feats[file]     = ref_feat
             else:

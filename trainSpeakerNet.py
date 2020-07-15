@@ -9,6 +9,7 @@ import glob
 from tuneThreshold import tuneThresholdfromScore
 from SpeakerNet import SpeakerNet
 from DatasetLoader import DatasetLoader
+# from DatasetFeatLoader import DatasetLoader
 
 parser = argparse.ArgumentParser(description = "SpeakerNet");
 

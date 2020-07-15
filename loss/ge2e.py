@@ -20,8 +20,11 @@ class GE2ELoss(nn.Module):
         print('Initialised GE2E')
 
     def forward(self, x, label=None):
-
+        # x --- [400, 2, 512]
         gsize = x.size()[1]
+        # print('gsize')
+        # print(gsize)
+        # exit()
         centroids = torch.mean(x, 1)
         stepsize = x.size()[0]
 

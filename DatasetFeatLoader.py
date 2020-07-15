@@ -11,42 +11,67 @@ import time
 import math
 from scipy.io import wavfile
 from queue import Queue
-from models.extract_fbank_model import *
 
 def round_down(num, divisor):
     return num - (num%divisor)
 
-def loadWAV(filename, max_frames, evalmode=True, num_eval=10):
+# def loadWAV(filename, max_frames, evalmode=True, num_eval=10):
+
+#     # Maximum audio length
+#     max_audio = max_frames * 160 + 240
+
+#     # Read wav file and convert to torch tensor
+#     sample_rate, audio  = wavfile.read(filename)
+
+#     audiosize = audio.shape[0]
+
+#     if audiosize <= max_audio:
+#         shortage    = math.floor( ( max_audio - audiosize + 1 ) / 2 )
+#         audio       = numpy.pad(audio, (shortage, shortage), 'constant', constant_values=0)
+#         audiosize   = audio.shape[0]
+
+#     if evalmode:
+#         startframe = numpy.linspace(0,audiosize-max_audio,num=num_eval)
+#     else:
+#         startframe = numpy.array([numpy.int64(random.random()*(audiosize-max_audio))])
     
-    # Maximum audio length
-    max_audio = max_frames * 160 + 240
+#     feats = []
+#     if evalmode and max_frames == 0:
+#         feats.append(audio)
+#     else:
+#         for asf in startframe:
+#             feats.append(audio[int(asf):int(asf)+max_audio])
 
-    # Read wav file and convert to torch tensor
-    sample_rate, audio  = wavfile.read(filename)
+#     feat = numpy.stack(feats,axis=0)
 
-    audiosize = audio.shape[0]
+#     feat = torch.FloatTensor(feat)
 
-    if audiosize <= max_audio:
-        shortage    = math.floor( ( max_audio - audiosize + 1 ) / 2 )
-        audio       = numpy.pad(audio, (shortage, shortage), 'constant', constant_values=0)
-        audiosize   = audio.shape[0]
+#     return feat;
 
-    if evalmode:
-        startframe = numpy.linspace(0,audiosize-max_audio,num=num_eval)
-    else:
-        startframe = numpy.array([numpy.int64(random.random()*(audiosize-max_audio))])
-        # startframe = [1429] # QwQ 隨機性消除用!
+def loadFeat(filename, evalmode=True, num_eval=10):
+
+    # print(filename)
+    # exit()
+    # if evalmode:
+    #     startframe = numpy.linspace(0,audiosize-max_audio,num=num_eval)
+    # else:
+    #     startframe = numpy.array([numpy.int64(random.random()*(audiosize-max_audio))])
     
-    feats = []
-    if evalmode and max_frames == 0:
-        feats.append(audio)
-    else:
-        for asf in startframe:
-            feats.append(audio[int(asf):int(asf)+max_audio])
+    # feats = []
+    # if evalmode and max_frames == 0:
+    #     feats.append(audio)
+    # else:
+    #     for asf in startframe:
+    #         feats.append(audio[int(asf):int(asf)+max_audio])
 
-    feat = numpy.stack(feats,axis=0)
-
-    feat = torch.FloatTensor(feat)
+    # feat = numpy.stack(feats,axis=0)
+    new_path = filename.replace('/aac','/fbank_feat')
+    new_path = new_path.replace('.wav','.feat.pt')
+    # print(new_path)
+    feat = torch.load(new_path)
+    # feat = torch.FloatTensor(feat)
+    # print(feat.size())
+    # exit()
     return feat;
 
 class DatasetLoader(object):
@@ -65,9 +90,6 @@ class DatasetLoader(object):
 
         self.dataLoaders = [];
         
-        # QwQ
-        # self.__S__ = Ex_Fbank().cuda();
-
         ### Read Training Files...
         with open(dataset_file_name) as dataset_file:
             while True:
@@ -101,37 +123,12 @@ class DatasetLoader(object):
                 continue;
 
             in_data = [];
-            # print('self.gSize')
-            # print(self.gSize) # --- 2   group 有幾個
-            # print('self.data_list')
-            # print(self.data_list[0][0]) # 1 2 同語者
-            # print(self.data_list[0][1]) # 1 2 同語者
-
-            # print(self.data_list[1][0]) # 3 4 同語者
-            # print(self.data_list[1][1]) # 3 4 同語者
-
             for ii in range(0,self.gSize):
                 feat = []
-                counter = 0
                 for ij in range(index,index+self.batch_size):
-                    counter += 1
-                    feat.append(loadWAV(self.data_list[ij][ii], self.max_frames, evalmode=False));
-                    # print(self.data_list[ij][ii])
-                    # TAT
-                    # print('dataLoaderThread feat size')
-                    # print(feat[0].size()) # --- [1,32240]
-                    # exit()
-                # 先變換語者，後變換句子
-                # exit()
-                # print('counter')
-                # print(counter) # --- 400
-                # exit()
+                    feat.append(loadFeat(self.data_list[ij][ii], evalmode=False));
                 in_data.append(torch.cat(feat, dim=0));
-                # print('in_data size')
-                # print(in_data[0].size())
-                # exit()
 
-                
             in_label = numpy.asarray(self.data_label[index:index+self.batch_size]);
             
             self.datasetQueue.put([in_data, in_label]);
@@ -154,45 +151,22 @@ class DatasetLoader(object):
         flattened_label = []
 
         ## Data for each class
-        # print('data_dict len')
-        # print((self.data_dict))
-        # exit()
         for findex, key in enumerate(dictkeys):
             data    = self.data_dict[key]
-            #QAQ
-            # print(findex)
-            # print(key)
-            # print(data)
-            for utt in data :
-                # print(utt)  
-                # new_path = utt.replace('/wav','/fbank_feat')
-                # new_path = new_path.replace('.wav','.feat.pt')
-                # print(new_path)  
-                # outfile = fname.replace('.m4a','.wav')
-                wav_feat = loadWAV(utt, self.max_frames, evalmode=False)
-                # outp      = self.__S__.forward(wav_feat.cuda())
-                # print(wav_feat.size())
-                # print('outp')
-                # print(outp)
-                # print('outp size')
-                # print(outp[0].size())
-                # torch.save(outp, new_path)
-                # a = torch.load('test.feat.pt')
-                # print(a)
-            # wav_feat
-                # exit()
-            # continue
             numSeg  = round_down(min(len(data),self.max_seg_per_spk),self.gSize)
             
             rp      = lol(numpy.random.permutation(len(data))[:numSeg],self.gSize)
-            # rp = [numpy.array([0, 1])] # QwQ 隨機性取消
+            rp = [numpy.array([0, 1])] # QAQ 隨機性取消
             flattened_label.extend([findex] * (len(rp)))
             for indices in rp:
                 flattened_list.append([data[i] for i in indices])
-        # exit()
+
         ## Data in random order
         mixid           = numpy.random.permutation(len(flattened_label))
-        # mixid = flattened_label # QwQ 隨機性取消
+        mixid = flattened_label # QAQ 隨機性取消
+        # print(flattened_label)
+        # print(len(mixid))
+        # exit()
         mixlabel        = []
         mixmap          = []
 
@@ -205,7 +179,7 @@ class DatasetLoader(object):
 
         self.data_list  = [flattened_list[i] for i in mixmap]
         self.data_label = [flattened_label[i] for i in mixmap]
-
+        
         ## Iteration size
         self.nFiles = len(self.data_label);
 

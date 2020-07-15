@@ -6,7 +6,7 @@ python3 trainSpeakerNet.py \
         --trainfunc angleproto  \
         --optimizer adam  \
         --save_path data/feat_test \
-        --batch_size 10  \
+        --batch_size 5  \
         --max_frames 200  \
         --nSpeakers 2  \
         --train_list data_list/vox2020Baseline/very_small_train_list.txt  \

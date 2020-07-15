@@ -15,6 +15,7 @@ from loss.arcface import AAMSoftmax
 from loss.softmax import SoftmaxLoss
 from loss.protoloss import ProtoLoss
 from loss.pairwise import PairwiseLoss
+from models.lstm import *
 
 class SpeakerNet(nn.Module):
 
@@ -25,6 +26,7 @@ class SpeakerNet(nn.Module):
 
         SpeakerNetModel = importlib.import_module('models.'+model).__getattribute__(model)
         self.__S__ = SpeakerNetModel(**argsdict).cuda();
+        self.fc = th_Fc(nOut ,nOut).cuda()
 
         if trainfunc == 'angleproto':
             self.__L__ = AngleProtoLoss().cuda()
@@ -62,7 +64,11 @@ class SpeakerNet(nn.Module):
             raise ValueError('Undefined loss.')
 
         if optimizer == 'adam':
-            self.__optimizer__ = torch.optim.Adam(self.parameters(), lr = lr);
+            # self.__optimizer__ = torch.optim.Adam(self.parameters(), lr = lr);
+            #設定學習率SpeakerNet設定'lr':1e-6、全連結層'lr':0.001
+            self.__optimizer__ = torch.optim.Adam([{'params':self.__S__.parameters(),'lr':1e-6},
+                                    {'params':self.fc.parameters(),'lr':0.001}]);
+            # https://blog.csdn.net/qq_34914551/article/details/87699317
         elif optimizer == 'sgd':
             self.__optimizer__ = torch.optim.SGD(self.parameters(), lr = lr, momentum = 0.9, weight_decay=5e-5);
         else:
@@ -120,7 +126,7 @@ class SpeakerNet(nn.Module):
                 feat.append(outp)
 
             feat = torch.stack(feat,dim=1).squeeze()
-
+            feat=self.fc.forward(feat)
             label   = torch.LongTensor(data_label).cuda()
             # print('__L__ feat')
             # print(feat.size()) # --- [400, 2, 512]

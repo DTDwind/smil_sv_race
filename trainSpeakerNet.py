@@ -134,41 +134,41 @@ while(1):
 
         print(time.strftime("%Y-%m-%d %H:%M:%S"), it, "Evaluating...");
 
-        #設定requires_grad凍結參數(全連結層沒有凍結、其他有凍結)
-        for name, p in s.named_parameters():
-            # print(name)
-            if "fc.fc.weight" in name or "fc.fc.bias" in name:
-                p.requires_grad = True
-            else:
-                p.requires_grad = False
+        # #設定requires_grad凍結參數(全連結層沒有凍結、其他有凍結)
+        # for name, p in s.named_parameters():
+        #     # print(name)
+        #     if "fc.fc.weight" in name or "fc.fc.bias" in name:
+        #         p.requires_grad = True
+        #     else:
+        #         p.requires_grad = False
 
-        parameters_dict=dict() 
-        for name,parameters in s.named_parameters():
-            parameters_dict[name]=parameters
+        # parameters_dict=dict() 
+        # for name,parameters in s.named_parameters():
+        #     parameters_dict[name]=parameters
         
-        #檢查是否有凍結
-        for name,parameters in s.named_parameters():#nn.Module有成员函数parameters()
-            if(name=="__S__.fc.bias"):
-                if counter == 1:
-                    S_first=parameters_dict["__S__.fc.bias"]
-                else:
-                    S_second =parameters_dict["__S__.fc.bias"]
+        # #檢查是否有凍結
+        # for name,parameters in s.named_parameters():#nn.Module有成员函数parameters()
+        #     if(name=="__S__.fc.bias"):
+        #         if counter == 1:
+        #             S_first=parameters_dict["__S__.fc.bias"]
+        #         else:
+        #             S_second =parameters_dict["__S__.fc.bias"]
                 
-                    print(torch.sum(S_first==S_second))
-                    if(torch.sum(S_first==S_second)==512):
-                        print('__S__ Ya freeze!')
-                    else:
-                        print('__S__ GG')
-            if(name=="fc.fc.weight"):
-                if counter == 1:
-                    fc_first=parameters_dict["fc.fc.weight"]
-                else:
-                    fc_second =parameters_dict["fc.fc.weight"]
+        #             print(torch.sum(S_first==S_second))
+        #             if(torch.sum(S_first==S_second)==512):
+        #                 print('__S__ Ya freeze!')
+        #             else:
+        #                 print('__S__ GG')
+        #     if(name=="fc.fc.weight"):
+        #         if counter == 1:
+        #             fc_first=parameters_dict["fc.fc.weight"]
+        #         else:
+        #             fc_second =parameters_dict["fc.fc.weight"]
                 
-                    if(torch.sum(fc_first==fc_second)==512):
-                        print('__fc__ Ya freeze!')
-                    else:
-                        print('__fc__ GG')
+        #             if(torch.sum(fc_first==fc_second)==512):
+        #                 print('__fc__ Ya freeze!')
+        #             else:
+        #                 print('__fc__ GG')
 
         sc, lab = s.evaluateFromListSave(args.test_list, print_interval=100, feat_dir=feat_save_path, test_path=args.test_path)
         result = tuneThresholdfromScore(sc, lab, [1, 0.1]);

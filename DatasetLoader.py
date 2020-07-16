@@ -47,6 +47,8 @@ def loadWAV(filename, max_frames, evalmode=True, num_eval=10):
     feat = numpy.stack(feats,axis=0)
 
     feat = torch.FloatTensor(feat)
+    # print(feat[0][1])
+    # exit()
     return feat;
 
 class DatasetLoader(object):
@@ -163,13 +165,13 @@ class DatasetLoader(object):
             # print(findex)
             # print(key)
             # print(data)
-            for utt in data :
+            # for utt in data :
                 # print(utt)  
                 # new_path = utt.replace('/wav','/fbank_feat')
                 # new_path = new_path.replace('.wav','.feat.pt')
                 # print(new_path)  
                 # outfile = fname.replace('.m4a','.wav')
-                wav_feat = loadWAV(utt, self.max_frames, evalmode=False)
+                # wav_feat = loadWAV(utt, self.max_frames, evalmode=False)
                 # outp      = self.__S__.forward(wav_feat.cuda())
                 # print(wav_feat.size())
                 # print('outp')

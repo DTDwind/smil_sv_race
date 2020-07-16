@@ -26,7 +26,10 @@ class SpeakerNet(nn.Module):
 
         SpeakerNetModel = importlib.import_module('models.'+model).__getattribute__(model)
         self.__S__ = SpeakerNetModel(**argsdict).cuda();
-        self.fc = th_Fc(nOut ,nOut).cuda()
+        # self.fc = th_Fc(nOut ,nOut).cuda()
+        self.lstm = rnn_LSTM(nOut, nOut).cuda();
+
+        # self.lstm
 
         if trainfunc == 'angleproto':
             self.__L__ = AngleProtoLoss().cuda()
@@ -65,9 +68,9 @@ class SpeakerNet(nn.Module):
 
         if optimizer == 'adam':
             # self.__optimizer__ = torch.optim.Adam(self.parameters(), lr = lr);
-            #設定學習率SpeakerNet設定'lr':1e-6、全連結層'lr':0.001
+            # 設定學習率SpeakerNet設定'lr':1e-6、全連結層'lr':0.001
             self.__optimizer__ = torch.optim.Adam([{'params':self.__S__.parameters(),'lr':1e-6},
-                                    {'params':self.fc.parameters(),'lr':0.001}]);
+                                    {'params':self.lstm.parameters(),'lr':0.001}]);
             # https://blog.csdn.net/qq_34914551/article/details/87699317
         elif optimizer == 'sgd':
             self.__optimizer__ = torch.optim.SGD(self.parameters(), lr = lr, momentum = 0.9, weight_decay=5e-5);
@@ -92,7 +95,6 @@ class SpeakerNet(nn.Module):
         top1    = 0     # EER or accuracy
 
         criterion = torch.nn.CrossEntropyLoss()
-        
         for data, data_label in loader:
             # print("data:"+str(data))
             
@@ -107,13 +109,15 @@ class SpeakerNet(nn.Module):
             # print(data_label)
             # exit()
             feat = []
+            
             for inp in data:
                 # print('inp')
                 # print(inp)
                 # # print(inp.size())
                 # exit()
-                # print('QAQ')
                 outp      = self.__S__.forward(inp.cuda())
+                outp = self.lstm.forward(outp.cuda())
+                
                 # print('outp')
                 # print(outp)
                 # print('outp size')
@@ -126,7 +130,7 @@ class SpeakerNet(nn.Module):
                 feat.append(outp)
 
             feat = torch.stack(feat,dim=1).squeeze()
-            feat=self.fc.forward(feat)
+            
             label   = torch.LongTensor(data_label).cuda()
             # print('__L__ feat')
             # print(feat.size()) # --- [400, 2, 512]
@@ -219,7 +223,8 @@ class SpeakerNet(nn.Module):
             
             # inp1 = loadFeat(os.path.join(test_path,file), evalmode=True, num_eval=num_eval).cuda()
             
-            ref_feat = self.__S__.forward(inp1).detach().cpu()
+            ref_feat = self.__S__.forward(inp1)
+            ref_feat = self.lstm.forward(ref_feat).detach().cpu()
             # print(inp1.size())
             # print('inp1_feat')
             # exit()
@@ -290,7 +295,8 @@ class SpeakerNet(nn.Module):
         for param_group in self.__optimizer__.param_groups:
             param_group['lr'] = param_group['lr']*alpha
             learning_rate.append(param_group['lr'])
-
+        # print('learning_rate')
+        # print(learning_rate)
         return learning_rate;
 
 

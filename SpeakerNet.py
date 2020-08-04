@@ -27,7 +27,8 @@ class SpeakerNet(nn.Module):
         SpeakerNetModel = importlib.import_module('models.'+model).__getattribute__(model)
         self.__S__ = SpeakerNetModel(**argsdict).cuda();
         self.fc = th_Fc(nOut ,nOut).cuda()
-        
+        #self.activate = Activation_Net(nOut,nOut).cuda()
+
         if trainfunc == 'angleproto':
             self.__L__ = AngleProtoLoss().cuda()
             self.__train_normalize__    = True

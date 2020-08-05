@@ -1,6 +1,6 @@
 export CUDA_VISIBLE_DEVICES=0
 nvidia-smi
-python3 ./trainSpeakerNet.py \
+time python3.6 ./trainSpeakerNet.py \
         --eval \
         --model ResNetSE34L \
         --trainfunc angleproto  \

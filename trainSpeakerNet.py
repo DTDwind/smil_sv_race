@@ -61,7 +61,8 @@ args = parser.parse_args();
 ## Initialise directories
 model_save_path     = args.save_path+"/model"
 result_save_path    = args.save_path+"/result"
-feat_save_path      = ""
+# feat_save_path      = args.save_path+"/feat"
+feat_save_path      = "/share/nas165/chengsam/vox1/vox1_test_feat"
 
 if not(os.path.exists(model_save_path)):
     os.makedirs(model_save_path)

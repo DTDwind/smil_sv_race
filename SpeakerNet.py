@@ -8,6 +8,7 @@ import numpy, math, pdb, sys, random
 import time, os, itertools, shutil, importlib
 from tuneThreshold import tuneThresholdfromScore
 from DatasetLoader import loadWAV
+# from DatasetFeatLoader import loadFeat
 from loss.ge2e import GE2ELoss
 from loss.angleproto import AngleProtoLoss
 from loss.cosface import AMSoftmax
@@ -16,6 +17,8 @@ from loss.softmax import SoftmaxLoss
 from loss.protoloss import ProtoLoss
 from loss.pairwise import PairwiseLoss
 from models.lstm import *
+from tqdm import tqdm 
+import glob
 
 class SpeakerNet(nn.Module):
 
@@ -78,6 +81,7 @@ class SpeakerNet(nn.Module):
             raise ValueError('Undefined optimizer.')
         
         self.__max_frames__ = max_frames;
+        self.feat_keep = True
 
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Train network
@@ -116,7 +120,7 @@ class SpeakerNet(nn.Module):
                 # # print(inp.size())
                 # exit()
                 outp      = self.__S__.forward(inp.cuda())
-                outp = self.lstm.forward(outp.cuda())
+                # outp = self.lstm.forward(outp.cuda())
                 
                 # print('outp')
                 # print(outp)
@@ -186,7 +190,10 @@ class SpeakerNet(nn.Module):
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
     def evaluateFromListSave(self, listfilename, print_interval=5000, feat_dir='', test_path='', num_eval=10):
-        
+        if not self.feat_keep:
+            feat_check = glob.glob('%s/*.wav'%feat_dir)
+            if len(feat_check) >= 1:
+                self.feat_keep = True
         self.eval();
         
         lines       = []
@@ -196,9 +203,10 @@ class SpeakerNet(nn.Module):
         tstart      = time.time()
 
         if feat_dir != '':
-            print('Saving temporary files to %s'%feat_dir)
-            if not(os.path.exists(feat_dir)):
-                os.makedirs(feat_dir)
+            if not self.feat_keep:
+                print('Saving temporary files to %s'%feat_dir)
+                if not(os.path.exists(feat_dir)):
+                    os.makedirs(feat_dir)
 
         ## Read all lines
         with open(listfilename) as listfile:
@@ -217,17 +225,18 @@ class SpeakerNet(nn.Module):
         setfiles.sort()
 
         ## Save all features to file
-        for idx, file in enumerate(setfiles):
-
-            inp1 = loadWAV(os.path.join(test_path,file), self.__max_frames__, evalmode=True, num_eval=num_eval).cuda()
+        print("Reading File");
+        for idx, file in tqdm(enumerate(setfiles), ascii=True):
+            if not self.feat_keep:
+                inp1 = loadWAV(os.path.join(test_path,file), self.__max_frames__, evalmode=True, num_eval=num_eval).cuda()
             
-            # inp1 = loadFeat(os.path.join(test_path,file), evalmode=True, num_eval=num_eval).cuda()
-            
-            ref_feat = self.__S__.forward(inp1)
-            ref_feat = self.lstm.forward(ref_feat).detach().cpu()
-            # print(inp1.size())
-            # print('inp1_feat')
-            # exit()
+                # inp1 = loadFeat(os.path.join(test_path,file), self.__max_frames__, evalmode=True, num_eval=num_eval).cuda()
+                
+                ref_feat = self.__S__.forward(inp1).detach().cpu()
+                # ref_feat = self.lstm.forward(ref_feat).detach().cpu()
+                # print(inp1.size())
+                # print('inp1_feat')
+                # exit()
             filename = '%06d.wav'%idx
             # filename = '%06d.feat.pt'%idx
             # print('QAQ')
@@ -236,12 +245,14 @@ class SpeakerNet(nn.Module):
                 feats[file]     = ref_feat
             else:
                 filedict[file]  = filename
-                torch.save(ref_feat,os.path.join(feat_dir,filename))
+                if not self.feat_keep:
+                    torch.save(ref_feat,os.path.join(feat_dir,filename))
 
-            telapsed = time.time() - tstart
+                telapsed = time.time() - tstart
+        # if idx % print_interval == 0:
+        #     sys.stdout.write("\rReading %d: %.2f Hz, embed size %d"%(idx,idx/telapsed,ref_feat.size()[1]));
 
-            if idx % print_interval == 0:
-                sys.stdout.write("\rReading %d: %.2f Hz, embed size %d"%(idx,idx/telapsed,ref_feat.size()[1]));
+
 
         print('')
         all_scores = [];
@@ -249,7 +260,8 @@ class SpeakerNet(nn.Module):
         tstart = time.time()
 
         ## Read files and compute all scores
-        for idx, line in enumerate(lines):
+        print("Computing!");
+        for idx, line in tqdm(enumerate(lines), ascii=True):
 
             data = line.split();
 
@@ -273,12 +285,12 @@ class SpeakerNet(nn.Module):
 
             if idx % print_interval == 0:
                 telapsed = time.time() - tstart
-                sys.stdout.write("\rComputing %d: %.2f Hz"%(idx,idx/telapsed));
-                sys.stdout.flush();
+                # sys.stdout.write("\rComputing %d: %.2f Hz"%(idx,idx/telapsed));
+                # sys.stdout.flush();
 
-        if feat_dir != '':
-            print(' Deleting temporary files.')
-            shutil.rmtree(feat_dir)
+        # if feat_dir != '':
+            # print(' Deleting temporary files.')
+            # shutil.rmtree(feat_dir)
 
         print('\n')
 

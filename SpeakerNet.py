@@ -17,6 +17,7 @@ from loss.softmax import SoftmaxLoss
 from loss.protoloss import ProtoLoss
 from loss.pairwise import PairwiseLoss
 from models.lstm import *
+from models.fine_tune_dnn import *
 from tqdm import tqdm 
 import glob
 
@@ -31,8 +32,8 @@ class SpeakerNet(nn.Module):
         self.__S__ = SpeakerNetModel(**argsdict).cuda();
         # self.fc = th_Fc(nOut ,nOut).cuda()
         self.lstm = rnn_LSTM(nOut, nOut).cuda();
+        self.fine_tune_DNN = th_Fc(nOut, nOut).cuda();
 
-        # self.lstm
 
         if trainfunc == 'angleproto':
             self.__L__ = AngleProtoLoss().cuda()
@@ -73,7 +74,7 @@ class SpeakerNet(nn.Module):
             # self.__optimizer__ = torch.optim.Adam(self.parameters(), lr = lr);
             # 設定學習率SpeakerNet設定'lr':1e-6、全連結層'lr':0.001
             self.__optimizer__ = torch.optim.Adam([{'params':self.__S__.parameters(),'lr':1e-6},
-                                    {'params':self.lstm.parameters(),'lr':0.001}]);
+                                    {'params':self.fine_tune_DNN.parameters(),'lr':0.001}]);
             # https://blog.csdn.net/qq_34914551/article/details/87699317
         elif optimizer == 'sgd':
             self.__optimizer__ = torch.optim.SGD(self.parameters(), lr = lr, momentum = 0.9, weight_decay=5e-5);
@@ -81,7 +82,7 @@ class SpeakerNet(nn.Module):
             raise ValueError('Undefined optimizer.')
         
         self.__max_frames__ = max_frames;
-        self.feat_keep = True
+        self.feat_keep = False
 
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Train network
@@ -121,6 +122,7 @@ class SpeakerNet(nn.Module):
                 # exit()
                 outp      = self.__S__.forward(inp.cuda())
                 # outp = self.lstm.forward(outp.cuda())
+                outp = self.fine_tune_DNN.forward(outp.cuda())
                 
                 # print('outp')
                 # print(outp)
@@ -190,10 +192,6 @@ class SpeakerNet(nn.Module):
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
     def evaluateFromListSave(self, listfilename, print_interval=5000, feat_dir='', test_path='', num_eval=10):
-        if not self.feat_keep:
-            feat_check = glob.glob('%s/*.wav'%feat_dir)
-            if len(feat_check) >= 1:
-                self.feat_keep = True
         self.eval();
         
         lines       = []
@@ -204,9 +202,10 @@ class SpeakerNet(nn.Module):
 
         if feat_dir != '':
             if not self.feat_keep:
+                feat_dir = ''
                 print('Saving temporary files to %s'%feat_dir)
-                if not(os.path.exists(feat_dir)):
-                    os.makedirs(feat_dir)
+                # if not(os.path.exists(feat_dir)):
+                #     os.makedirs(feat_dir)
 
         ## Read all lines
         with open(listfilename) as listfile:
@@ -232,8 +231,10 @@ class SpeakerNet(nn.Module):
             
                 # inp1 = loadFeat(os.path.join(test_path,file), self.__max_frames__, evalmode=True, num_eval=num_eval).cuda()
                 
-                ref_feat = self.__S__.forward(inp1).detach().cpu()
-                # ref_feat = self.lstm.forward(ref_feat).detach().cpu()
+                # ref_feat = self.__S__.forward(inp1).detach().cpu()
+                # ref_feat = self.lstm.forward(ref_feat).detach().cpu() 
+                ref_feat = self.__S__.forward(inp1)
+                ref_feat = self.fine_tune_DNN.forward(ref_feat).detach().cpu()
                 # print(inp1.size())
                 # print('inp1_feat')
                 # exit()
@@ -288,9 +289,10 @@ class SpeakerNet(nn.Module):
                 # sys.stdout.write("\rComputing %d: %.2f Hz"%(idx,idx/telapsed));
                 # sys.stdout.flush();
 
-        # if feat_dir != '':
-            # print(' Deleting temporary files.')
-            # shutil.rmtree(feat_dir)
+        if feat_dir != '':
+            if not self.feat_keep:
+                print(' Deleting temporary files.')
+                shutil.rmtree(feat_dir)
 
         print('\n')
 

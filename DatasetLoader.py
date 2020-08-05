@@ -25,12 +25,14 @@ def loadWAV(filename, max_frames, evalmode=True, num_eval=10):
     sample_rate, audio  = wavfile.read(filename)
 
     audiosize = audio.shape[0]
-
+    # print('audiosize')
+    # print(audiosize)
     if audiosize <= max_audio:
         shortage    = math.floor( ( max_audio - audiosize + 1 ) / 2 )
         audio       = numpy.pad(audio, (shortage, shortage), 'constant', constant_values=0)
         audiosize   = audio.shape[0]
-
+    # print('max_audio')
+    # print(max_audio)
     if evalmode:
         startframe = numpy.linspace(0,audiosize-max_audio,num=num_eval)
     else:
@@ -47,7 +49,7 @@ def loadWAV(filename, max_frames, evalmode=True, num_eval=10):
     feat = numpy.stack(feats,axis=0)
 
     feat = torch.FloatTensor(feat)
-    # print(feat[0][1])
+    # print(feat.size())
     # exit()
     return feat;
 

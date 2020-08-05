@@ -76,7 +76,9 @@ class ResNetSE(nn.Module):
         # exit()
         # print('res start')
         # torch.Size([5, 32240])
+
         x = self.torchfb(x)+1e-6 
+
         # print(x.size()) # torch.Size([5, 40, 202])
         x = self.instancenorm(x.log()).unsqueeze(1).detach()
         # print(x.size()) # torch.Size([5, 1, 40, 202])
@@ -96,27 +98,27 @@ class ResNetSE(nn.Module):
         # print(x.size()) # torch.Size([5, 128, 5, 51])
         x = self.avgpool(x)
         # print(x.size()) # torch.Size([5, 128, 1, 51])
-        # if self.encoder_type == "SAP":
-        #     x = x.permute(0, 2, 1, 3)
-        #     # print(x.size()) # torch.Size([5, 1, 128, 51])
-        #     x = x.squeeze(dim=1).permute(0, 2, 1)  # batch * L * D
-        #     # print(x.size()) # torch.Size([5, 51, 128])
-        #     h = torch.tanh(self.sap_linear(x))
-        #     # print(x.size()) # torch.Size([5, 51, 128])
-        #     w = torch.matmul(h, self.attention).squeeze(dim=2)
-        #     # print(x.size()) # torch.Size([5, 51, 128])
-        #     w = F.softmax(w, dim=1).view(x.size(0), x.size(1), 1)
-        #     # print(x.size()) # torch.Size([5, 51, 128])
-        #     x = torch.sum(x * w, dim=1)
-        #     # print(x.size()) # torch.Size([5, 128])
-        # x = x.view(x.size()[0], -1)
+        if self.encoder_type == "SAP":
+            x = x.permute(0, 2, 1, 3)
+            # print(x.size()) # torch.Size([5, 1, 128, 51])
+            x = x.squeeze(dim=1).permute(0, 2, 1)  # batch * L * D
+            # print(x.size()) # torch.Size([5, 51, 128])
+            h = torch.tanh(self.sap_linear(x))
+            # print(x.size()) # torch.Size([5, 51, 128])
+            w = torch.matmul(h, self.attention).squeeze(dim=2)
+            # print(x.size()) # torch.Size([5, 51, 128])
+            w = F.softmax(w, dim=1).view(x.size(0), x.size(1), 1)
+            # print(x.size()) # torch.Size([5, 51, 128])
+            x = torch.sum(x * w, dim=1)
+            # print(x.size()) # torch.Size([5, 128])
+        x = x.view(x.size()[0], -1)
         # # print(x.size()) # torch.Size([5, 128])
-        # x = self.fc(x)
+        x = self.fc(x)
         # print(x.size()) # torch.Size([5, 512])
         # print('res end')
-        x = x.permute(0, 2, 1, 3)
-        x = x.squeeze(dim=1).permute(0, 2, 1)
-        x = self.fc(x)
+        # x = x.permute(0, 2, 1, 3)
+        # x = x.squeeze(dim=1).permute(0, 2, 1)
+        # x = self.fc(x)
         return x
 
 

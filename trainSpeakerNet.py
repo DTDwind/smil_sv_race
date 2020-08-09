@@ -7,7 +7,7 @@ import pdb
 import torch
 import glob
 from tuneThreshold import tuneThresholdfromScore
-from SpeakerNet import SpeakerNet
+# from SpeakerNet import SpeakerNet
 from DatasetLoader import DatasetLoader
 # from DatasetFeatLoader import DatasetLoader
 
@@ -54,6 +54,9 @@ parser.add_argument('--model', type=str,        default="",     help='Name of mo
 parser.add_argument('--encoder_type', type=str, default="SAP",  help='Type of encoder');
 parser.add_argument('--nOut', type=int,         default=512,    help='Embedding size in the last FC layer');
 
+## New SpeakerNet
+parser.add_argument('--SpeakerNet_type', type=str, default="SpeakerNet",  help='Type of SpeakerNet'); # args.SpeakerNet_type
+
 args = parser.parse_args();
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
@@ -71,8 +74,13 @@ if not(os.path.exists(result_save_path)):
     os.makedirs(result_save_path)
 
 ## Load models
-s = SpeakerNet(**vars(args));
+if args.SpeakerNet_type == 'SpeakerNet':
+    from SpeakerNet import SpeakerNet
+elif args.SpeakerNet_type == 'SpeakerNet_eat_resnet':
+    from SpeakerNet_eat_resnet import SpeakerNet
 
+
+s = SpeakerNet(**vars(args));
 it          = 1;
 prevloss    = float("inf");
 sumloss     = 0;

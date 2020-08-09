@@ -1,6 +1,9 @@
 #!/usr/bin/python
 #-*- coding: utf-8 -*-
 
+# QAQ
+# 讓DNN吃resnet的輸出，loss線性組合
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -17,7 +20,7 @@ from loss.softmax import SoftmaxLoss
 from loss.protoloss import ProtoLoss
 from loss.pairwise import PairwiseLoss
 from models.lstm import *
-from models.fine_tune_dnn import *
+from models.eat_resnet_DNN import *
 from tqdm import tqdm 
 import glob
 
@@ -116,7 +119,7 @@ class SpeakerNet(nn.Module):
             # print(data_label)
             # exit()
             feat = []
-            
+            feat2 = []
             for inp in data:
                 # print('inp')
                 # print(inp)
@@ -124,7 +127,7 @@ class SpeakerNet(nn.Module):
                 # exit()
                 outp      = self.__S__.forward(inp.cuda())
                 # outp = self.lstm.forward(outp.cuda())
-                outp = self.fine_tune_DNN.forward(outp.cuda())
+                outp2 = self.fine_tune_DNN.forward(outp.cuda())
                 
                 # print('outp')
                 # print(outp)
@@ -135,15 +138,20 @@ class SpeakerNet(nn.Module):
 
                 if self.__train_normalize__:
                     outp   = F.normalize(outp, p=2, dim=1)
+                    outp2  = F.normalize(outp2, p=2, dim=1)
                 feat.append(outp)
-
+                feat2.append(outp2)
             feat = torch.stack(feat,dim=1).squeeze()
+            feat2 = torch.stack(feat2,dim=1).squeeze()
             
             label   = torch.LongTensor(data_label).cuda()
             # print('__L__ feat')
             # print(feat.size()) # --- [400, 2, 512]
             # exit()
             nloss, prec1 = self.__L__.forward(feat,label)
+            nloss2, prec12 = self.__L__.forward(feat2,label)
+            new_nloss = 0.8*nloss+0.2*nloss2
+            nloss = new_nloss
 
             loss    += nloss.detach().cpu();
             top1    += prec1
@@ -200,6 +208,7 @@ class SpeakerNet(nn.Module):
         files       = []
         filedict    = {}
         feats       = {}
+        feats2      = {}
         tstart      = time.time()
 
         if feat_dir != '':
@@ -236,7 +245,8 @@ class SpeakerNet(nn.Module):
                 # ref_feat = self.__S__.forward(inp1).detach().cpu()
                 # ref_feat = self.lstm.forward(ref_feat).detach().cpu() 
                 ref_feat = self.__S__.forward(inp1)
-                ref_feat = self.fine_tune_DNN.forward(ref_feat).detach().cpu()
+                ref_feat2 = self.fine_tune_DNN.forward(ref_feat).detach().cpu()
+                ref_feat = ref_feat.detach().cpu()
                 # print(inp1.size())
                 # print('inp1_feat')
                 # exit()
@@ -246,10 +256,14 @@ class SpeakerNet(nn.Module):
             # exit()
             if feat_dir == '':
                 feats[file]     = ref_feat
+                feats2[file]     = ref_feat2
             else:
                 filedict[file]  = filename
                 if not self.feat_keep:
-                    torch.save(ref_feat,os.path.join(feat_dir,filename))
+                    # torch.save(ref_feat,os.path.join(feat_dir,filename))
+                    print('不要跑到這裡，會出問題!!!')
+                    print('這個訊息在SpeakerNet_eat_resnet.py!!!')
+                    exit()
 
                 telapsed = time.time() - tstart
         # if idx % print_interval == 0:
@@ -271,6 +285,8 @@ class SpeakerNet(nn.Module):
             if feat_dir == '':
                 ref_feat = feats[data[1]].cuda()
                 com_feat = feats[data[2]].cuda()
+                ref_feat2 = feats2[data[1]].cuda()
+                com_feat2 = feats2[data[2]].cuda()
             else:
                 ref_feat = torch.load(os.path.join(feat_dir,filedict[data[1]])).cuda()
                 com_feat = torch.load(os.path.join(feat_dir,filedict[data[2]])).cuda()
@@ -278,10 +294,15 @@ class SpeakerNet(nn.Module):
             if self.__test_normalize__:
                 ref_feat = F.normalize(ref_feat, p=2, dim=1)
                 com_feat = F.normalize(com_feat, p=2, dim=1)
+                ref_feat2 = F.normalize(ref_feat2, p=2, dim=1)
+                com_feat2 = F.normalize(com_feat2, p=2, dim=1)
 
             dist = F.pairwise_distance(ref_feat.unsqueeze(-1).expand(-1,-1,num_eval), com_feat.unsqueeze(-1).expand(-1,-1,num_eval).transpose(0,2)).detach().cpu().numpy();
-
+            dist2 = F.pairwise_distance(ref_feat2.unsqueeze(-1).expand(-1,-1,num_eval), com_feat2.unsqueeze(-1).expand(-1,-1,num_eval).transpose(0,2)).detach().cpu().numpy();
             score = -1 * numpy.mean(dist);
+            score2 = -1 * numpy.mean(dist2);
+            new_score = 0.8*score+0.2*score2
+            score = new_score
 
             all_scores.append(score);  
             all_labels.append(int(data[0]));

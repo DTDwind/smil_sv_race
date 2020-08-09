@@ -5,8 +5,8 @@ python3.6 trainSpeakerNet.py \
         --encoder_type SAP  \
         --trainfunc angleproto  \
         --optimizer adam  \
-        --save_path data/swish_test \
-        --batch_size 5  \
+        --save_path data/eat_resnet \
+        --batch_size 500  \
         --max_frames 200  \
         --nSpeakers 2  \
         --train_list data_list/vox2020Baseline/train_list.txt  \
@@ -15,15 +15,5 @@ python3.6 trainSpeakerNet.py \
         --test_list data_list/vox2020Baseline/veri_test.txt \
         --test_interval 1 \
         --initial_model baseline_lite_ap.model \
-        --nDataLoaderThread 10
-        
-# --train_list data_list/vox2020Baseline/train_list.txt  \
-        # --save_path data/small_data  \
-        # --train_list data_list/vox2020Baseline/train_cut.txt  \
-
-        # --train_list data_list/vox2020Baseline/test_2.txt  \
-
-        # --train_path /share/nas165/chengsam/vox2/voxceleb2_dev/aac  \
-
-        # --save_path data/lstm_test \ # 這個是用小筆的... train_cut.txt
-        # --save_path data/swish_test \
+        --nDataLoaderThread 10 \
+        --SpeakerNet_type SpeakerNet_eat_resnet

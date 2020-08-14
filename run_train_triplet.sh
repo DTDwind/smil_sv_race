@@ -15,7 +15,7 @@ python3.6 trainSpeakerNet.py \
         --test_list data_list/vox2020Baseline/veri_test.txt \
         --test_interval 1 \
         --margin 0.1 \
-        --lr_decay 0.8 \
-        --initial_model baseline_lite_ap.model \
+        --lr_decay 0.95 \
+        --initial_model initial_model/triplet0814.model \
         --nDataLoaderThread 10 \
         --SpeakerNet_type SpeakerNet_triplet

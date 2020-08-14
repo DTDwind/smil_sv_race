@@ -17,7 +17,7 @@ from loss.softmax import SoftmaxLoss
 from loss.protoloss import ProtoLoss
 from loss.pairwise import PairwiseLoss
 from models.lstm import *
-from models.fine_tune_dnn import *
+# from models.fine_tune_dnn import *
 from tqdm import tqdm 
 import glob
 
@@ -31,8 +31,8 @@ class SpeakerNet(nn.Module):
         SpeakerNetModel = importlib.import_module('models.'+model).__getattribute__(model)
         self.__S__ = SpeakerNetModel(**argsdict).cuda();
         # self.fc = th_Fc(nOut ,nOut).cuda()
-        self.lstm = rnn_LSTM(nOut, nOut).cuda();
-        self.fine_tune_DNN = th_Fc(nOut, nOut).cuda();
+        # self.lstm = rnn_LSTM(nOut, nOut).cuda();
+        # self.fine_tune_DNN = th_Fc(nOut, nOut).cuda();
 
 
         if trainfunc == 'angleproto':
@@ -73,9 +73,9 @@ class SpeakerNet(nn.Module):
         if optimizer == 'adam':
             # self.__optimizer__ = torch.optim.Adam(self.parameters(), lr = lr);
             # 設定學習率SpeakerNet設定'lr':1e-6、全連結層'lr':0.001
-            self.__optimizer__ = torch.optim.Adam([{'params':self.__S__.parameters(),'lr':1e-6},
+            self.__optimizer__ = torch.optim.Adam([{'params':self.__S__.parameters(),'lr':1e-5},
                                                 #    {'params':self.fine_tune_DNN.parameters(),'lr':0.001},
-                                                   {'params':self.__L__.parameters(),'lr':0.001}
+                                                   {'params':self.__L__.parameters(),'lr':1e-4}
                                                   ]);
             # https://blog.csdn.net/qq_34914551/article/details/87699317
         elif optimizer == 'sgd':

@@ -145,6 +145,7 @@ class SpeakerNet(nn.Module):
             feat2 = torch.stack(feat2,dim=1).squeeze()
             
             label   = torch.LongTensor(data_label).cuda()
+            
             # print('__L__ feat')
             # print(feat.size()) # --- [400, 2, 512]
             # exit()

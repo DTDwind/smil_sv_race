@@ -1,19 +1,19 @@
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=2
 nvidia-smi
 python3.6 trainSpeakerNet.py \
         --model ResNetSE34L  \
         --encoder_type SAP  \
-        --trainfunc angleproto  \
+        --trainfunc triplet  \
         --optimizer adam  \
-        --save_path data/eat_resnet \
-        --batch_size 500  \
+        --save_path data/loss_testX \
+        --batch_size 32  \
         --max_frames 200  \
         --nSpeakers 2  \
-        --train_list data_list/vox2020Baseline/train_list.txt  \
+        --train_list data_list/vox2020Baseline/test_2.txt  \
         --train_path /share/nas165/chengsam/vox2/voxceleb2_dev/aac  \
         --test_path /share/nas165/chengsam/vox1/voxceleb1_test/wav  \
         --test_list data_list/vox2020Baseline/veri_test.txt \
         --test_interval 1 \
-        --initial_model baseline_lite_ap.model \
+        --initial_model lr_test_model.model \
         --nDataLoaderThread 10 \
-        --SpeakerNet_type SpeakerNet_eat_resnet
+        --SpeakerNet_type SpeakerNet_lr_test

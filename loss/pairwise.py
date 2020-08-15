@@ -85,3 +85,7 @@ class PairwiseLoss(nn.Module):
                     negidx.append(random.choice(simidx))
 
         return negidx
+
+    def chnm(self):
+        self.margin += 0.1
+        return self.margin

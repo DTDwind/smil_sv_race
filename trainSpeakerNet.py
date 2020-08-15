@@ -78,6 +78,13 @@ if args.SpeakerNet_type == 'SpeakerNet':
     from SpeakerNet import SpeakerNet
 elif args.SpeakerNet_type == 'SpeakerNet_eat_resnet':
     from SpeakerNet_eat_resnet import SpeakerNet
+elif args.SpeakerNet_type == 'SpeakerNet_lr_test':
+    from SpeakerNet_lr_test import SpeakerNet
+elif args.SpeakerNet_type == 'SpeakerNet_triplet':
+    from SpeakerNet_triplet import SpeakerNet
+elif args.SpeakerNet_type == 'SpeakerNet_eat_pairwise_distance':
+    from SpeakerNet_eat_pairwise_distance import SpeakerNet
+
 
 
 s = SpeakerNet(**vars(args));
@@ -139,6 +146,9 @@ while(1):
     loss, traineer = s.train_network(loader=trainLoader);
 
     ## Validate and save
+    if it % 100 == 0 and args.SpeakerNet_type == 'SpeakerNet_triplet':
+        s.curriculum_learning()
+    
     if it % args.test_interval == 0:
 
         print(time.strftime("%Y-%m-%d %H:%M:%S"), it, "Evaluating...");

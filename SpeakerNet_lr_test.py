@@ -73,7 +73,7 @@ class SpeakerNet(nn.Module):
         if optimizer == 'adam':
             # self.__optimizer__ = torch.optim.Adam(self.parameters(), lr = lr);
             # 設定學習率SpeakerNet設定'lr':1e-6、全連結層'lr':0.001
-            self.__optimizer__ = torch.optim.Adam([{'params':self.__S__.parameters(),'lr':0},
+            self.__optimizer__ = torch.optim.Adam([{'params':self.__S__.parameters(),'lr':0.0001},
                                                 #    {'params':self.fine_tune_DNN.parameters(),'lr':0.001},
                                                    {'params':self.__L__.parameters(),'lr':0}
                                                   ]);
@@ -144,6 +144,8 @@ class SpeakerNet(nn.Module):
             # print(feat.size()) # --- [400, 2, 512]
             # exit()
             nloss, prec1 = self.__L__.forward(feat,label)
+            print(nloss)
+            exit()
 
             loss    += nloss.detach().cpu();
             top1    += prec1
@@ -312,7 +314,7 @@ class SpeakerNet(nn.Module):
             param_group['lr'] = param_group['lr']*alpha
             learning_rate.append(param_group['lr'])
         # print('learning_rate')
-        # print(learning_rate)
+        print('QAQ learning_rate update:'+str(learning_rate))
         return learning_rate;
 
 

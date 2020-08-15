@@ -5,8 +5,8 @@ python3.6 trainSpeakerNet.py \
         --encoder_type SAP  \
         --trainfunc angleproto  \
         --optimizer adam  \
-        --save_path data/eat_resnet \
-        --batch_size 500  \
+        --save_path data/oracal \
+        --batch_size 400  \
         --max_frames 200  \
         --nSpeakers 2  \
         --train_list data_list/vox2020Baseline/train_list.txt  \
@@ -15,5 +15,4 @@ python3.6 trainSpeakerNet.py \
         --test_list data_list/vox2020Baseline/veri_test.txt \
         --test_interval 1 \
         --initial_model baseline_lite_ap.model \
-        --nDataLoaderThread 10 \
-        --SpeakerNet_type SpeakerNet_eat_resnet
+        --nDataLoaderThread 10

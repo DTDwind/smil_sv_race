@@ -84,7 +84,8 @@ elif args.SpeakerNet_type == 'SpeakerNet_triplet':
     from SpeakerNet_triplet import SpeakerNet
 elif args.SpeakerNet_type == 'SpeakerNet_eat_pairwise_distance':
     from SpeakerNet_eat_pairwise_distance import SpeakerNet
-
+elif args.SpeakerNet_type == 'SpeakerNet_lstm_triplet':
+    from SpeakerNet_lstm_triplet import SpeakerNet
 
 
 s = SpeakerNet(**vars(args));

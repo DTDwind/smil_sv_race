@@ -251,6 +251,10 @@ class SpeakerNet(nn.Module):
             feat = torch.stack(feat,dim=1).squeeze()
             ori_feat = torch.stack(ori_feat,dim=1).squeeze()
             score = self.fine_tune_network.forward(feat, ori_feat, eval_mode=True).detach().cpu().numpy();
+            # print('QAQ')
+            # print(score)
+            # print('TAT')
+            # exit()
             # dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy();
             # print(dist.size())
             # score = -1 * dist

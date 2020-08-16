@@ -17,45 +17,50 @@ class The_fine_tune_network(nn.Module):
         print('The_fine_tune_network prep')
         super(The_fine_tune_network, self).__init__()
         #self.fc = nn.Linear(input_size, out_size)   
-        self.layer1 = nn.Linear(64481, 1024)
+        self.layer1 = nn.Linear(64480, 1024)
         self.layer2 = nn.Linear(1024, 1024)
         self.layer3 = nn.Linear(1024, 512) 
         self.layer4 = nn.Linear(512, 128)
         self.layer5 = nn.Linear(128, 16)
         self.layer6 = nn.Linear(16, 1)
+        self.layer7 = nn.Linear(2, 1)
 
         self.hard_rank  = hard_rank
         self.hard_prob  = hard_prob
         self.margin     = margin
-
+        self.relu = nn.ReLU(inplace=True)
         self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min=0.0, f_max=8000, pad=0, n_mels=40)
 
-        self.torch_sigmoid = nn.Sigmoid()
+        # self.torch_sigmoid = nn.Sigmoid()
         print('Initialised The_fine_tune_network Loss')
     
     #定義swish激活函數
     def swish(self,x):
         return x * torch.sigmoid(x)
 
-    def score_model(self, x):
+    def score_model(self, x, ori_score):
         x = self.layer1(x)
-        x = self.swish(x)
+        x = self.relu(x)
         x = self.layer2(x)
-        x = self.swish(x)
+        x = self.relu(x)
         x = self.layer3(x)
-        x = self.swish(x)
+        x = self.relu(x)
         x = self.layer4(x)
-        x = self.swish(x)
+        x = self.relu(x)
         x = self.layer5(x)
-        x = self.swish(x)
+        x = self.relu(x)
         x = self.layer6(x)
-        x = self.torch_sigmoid(x)
+        x = self.relu(x)
+        x = torch.cat(( x, ori_score), 1)
+        x = self.layer7(x)
+        # x = x+ori_score
         return x
 
     # https://blog.csdn.net/out_of_memory_error/article/details/81414986
     #在這裡設定三層，每層加上swish激活函數
     def forward(self, x,  ori_feat, label=None, eval_mode=False):
         if eval_mode :
+            # print('QAQ')
             x = x.unsqueeze(0)
             ori_feat = ori_feat.unsqueeze(0)
             out_anchor      = x[:,0,:]
@@ -64,9 +69,13 @@ class The_fine_tune_network(nn.Module):
             ori_anchor = ori_feat[:,0,:]
             ori_positive = ori_feat[:,1,:]
             pos_dist = F.pairwise_distance(out_anchor, out_positive)
+            # print(ori_anchor)
             pos_score = torch.pow(pos_dist, 2) # 轉成平方分數
-            pos = torch.cat((pos_score.unsqueeze(-1), ori_anchor, ori_positive), 1)
-            x = self.score_model(pos).squeeze(1)*-1
+            # print(pos_score)
+            pos = torch.cat((ori_anchor, ori_positive), 1)
+            x = self.score_model(pos, pos_score.unsqueeze(-1)).squeeze(1)*-1
+            # print(x)
+            # exit()
             return x
         out_anchor      = x[:,0,:]
         out_positive    = x[:,1,:]
@@ -97,14 +106,16 @@ class The_fine_tune_network(nn.Module):
 
         ori_negative = ori_positive[negidx,:]
 
-        pos = torch.cat((pos_score.unsqueeze(-1), ori_anchor, ori_positive), 1)
-        neg = torch.cat((neg_score.unsqueeze(-1), ori_anchor, ori_negative), 1)
-        new_pos_score = self.score_model(pos).squeeze(1)
-        new_neg_score = self.score_model(neg).squeeze(1)
+        pos = torch.cat(( ori_anchor, ori_positive), 1)
+        neg = torch.cat(( ori_anchor, ori_negative), 1)
+        new_pos_score = self.score_model(pos, pos_score.unsqueeze(-1)).squeeze(1)
+        new_neg_score = self.score_model(neg, neg_score.unsqueeze(-1)).squeeze(1)
             
         nloss   = torch.mean(F.relu(torch.pow(new_pos_score, 2) - torch.pow(new_neg_score, 2) + self.margin))
         scores = -1 * torch.cat([new_pos_score,new_neg_score],dim=0).detach().cpu().numpy()
         errors = tuneThresholdfromScore(scores, labelnp, []);
+        # print(labelnp)
+        # print(scores)
         return nloss, errors[1]
 
     def mineHardNegative(self, output):

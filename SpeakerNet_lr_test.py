@@ -144,8 +144,8 @@ class SpeakerNet(nn.Module):
             # print(feat.size()) # --- [400, 2, 512]
             # exit()
             nloss, prec1 = self.__L__.forward(feat,label)
-            print(nloss)
-            exit()
+            # print(nloss)
+            # exit()
 
             loss    += nloss.detach().cpu();
             top1    += prec1

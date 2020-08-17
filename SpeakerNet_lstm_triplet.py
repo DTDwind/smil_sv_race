@@ -17,7 +17,7 @@ from loss.softmax import SoftmaxLoss
 from loss.protoloss import ProtoLoss
 from loss.pairwise import PairwiseLoss
 from models.lstm import *
-from models.triplet_fine_tune_network import *
+from models.fine_tune_with_lstm import *
 from tqdm import tqdm 
 import glob
 

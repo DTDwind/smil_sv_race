@@ -8,8 +8,9 @@ import torch
 import glob
 from tuneThreshold import tuneThresholdfromScore
 # from SpeakerNet import SpeakerNet
-from DatasetLoader import DatasetLoader
+# from DatasetLoader import DatasetLoader
 # from DatasetFeatLoader import DatasetLoader
+from DatasetLoader_new import DatasetLoader
 
 parser = argparse.ArgumentParser(description = "SpeakerNet");
 
@@ -74,6 +75,7 @@ if not(os.path.exists(result_save_path)):
     os.makedirs(result_save_path)
 
 ## Load models
+load_all_wav = False
 if args.SpeakerNet_type == 'SpeakerNet':
     from SpeakerNet import SpeakerNet
 elif args.SpeakerNet_type == 'SpeakerNet_eat_resnet':
@@ -88,6 +90,7 @@ elif args.SpeakerNet_type == 'SpeakerNet_lstm_triplet':
     from SpeakerNet_lstm_triplet import SpeakerNet
 elif args.SpeakerNet_type == 'SpeakerNet_DNN_classifier':
     from SpeakerNet_DNN_classifier import SpeakerNet
+    load_all_wav = True
 
 s = SpeakerNet(**vars(args));
 it          = 1;
@@ -134,7 +137,7 @@ assert args.trainfunc in gsize_dict
 assert gsize_dict[args.trainfunc] <= 100
 
 ## Initialise data loader
-trainLoader = DatasetLoader(args.train_list, gSize=gsize_dict[args.trainfunc], **vars(args));
+trainLoader = DatasetLoader(args.train_list, gSize=gsize_dict[args.trainfunc], load_all_wav=load_all_wav, **vars(args));
 
 clr = s.updateLearningRate(1)
 

@@ -59,7 +59,6 @@ class The_fine_tune_network(nn.Module):
     #在這裡設定三層，每層加上swish激活函數
     def forward(self, x, label=None, eval_mode=False):
         if eval_mode :
-            x = x.unsqueeze(0)
             out_anchor      = x[:,0,:]
             out_positive    = x[:,1,:]
 
@@ -81,37 +80,13 @@ class The_fine_tune_network(nn.Module):
 
         pos = torch.cat(( out_anchor, out_positive), 1)
         neg = torch.cat(( out_anchor, out_negative), 1)
-        # print(out_positive)
-        # print(out_negative)
+
         new_pos_score = self.classifier_model(pos).squeeze(1)
         new_neg_score = self.classifier_model(neg).squeeze(1)
-        # print(new_pos_score)
-        # print(new_neg_score)
-        # print(labelnp)
-        # exit()
         total_socre = torch.cat((new_pos_score, new_neg_score), dim=0)
-        # print(total_socre.size())
-        # print(labelnp.size())
-        # total_socre = torch.cat((total_socre, torch.tensor([2])), dim=0)
-        # print(total_socre.unsqueeze(1))
-        # nloss   = self.criterion(total_socre, labelnp)
 
         nloss = self.criterion(total_socre, labelnp.float())
-        # exit()
-        # print(total_socre.size())
-        # x = total_socre[:,0]
-        # y= total_socre[:,1]
-        # x = y-x
-        # x = x.unsqueeze(1)
-        # print(x.size())
-        # prec1, _ = accuracy(x.detach().cpu(), labelnp.detach().cpu(), topk=(1, 5))
         errors  = tuneThresholdfromScore(total_socre.detach().cpu(), labelnp.detach().cpu(), []);
-        # exit()
-        # nloss   = torch.mean(F.relu(torch.pow(new_pos_score, 2) - torch.pow(new_neg_score, 2) + self.margin))
-        # scores  = torch.cat([new_pos_score,new_neg_score],dim=0).detach().cpu().numpy()
-        # errors  = tuneThresholdfromScore(scores, labelnp, []);
-        # print(labelnp)
-        # print(scores)
         return nloss, errors[1]
 
     def mineHardNegative(self, output):

@@ -5,11 +5,11 @@ python3.6 trainSpeakerNet.py \
         --encoder_type SAP  \
         --trainfunc angleproto  \
         --optimizer adam  \
-        --save_path data/DNN_classifier2 \
+        --save_path data/DNN_classifier3 \
         --batch_size 12  \
         --max_frames 200  \
         --nSpeakers 2  \
-        --train_list data_list/vox2020Baseline/test_2.txt  \
+        --train_list data_list/vox2020Baseline/train_list.txt  \
         --train_path /share/nas165/chengsam/vox2/voxceleb2_dev/aac  \
         --test_path /share/nas165/chengsam/vox1/voxceleb1_test/wav  \
         --test_list data_list/vox2020Baseline/veri_test.txt \

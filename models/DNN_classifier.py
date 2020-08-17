@@ -17,12 +17,12 @@ class The_fine_tune_network(nn.Module):
         print('The_fine_tune_network prep')
         super(The_fine_tune_network, self).__init__()
         #self.fc = nn.Linear(input_size, out_size)   
-        self.layer1 = nn.Linear(1024, 512)
-        self.layer2 = nn.Linear(512, 256)
-        self.layer3 = nn.Linear(256, 128) 
-        self.layer4 = nn.Linear(128, 64)
-        self.layer5 = nn.Linear(64, 32)
-        self.layer6 = nn.Linear(32, 1)
+        self.layer1 = nn.Linear(1024, 256)
+        self.layer2 = nn.Linear(256, 1)
+        # self.layer3 = nn.Linear(256, 128) 
+        # self.layer4 = nn.Linear(128, 64)
+        # self.layer5 = nn.Linear(64, 1)
+        # self.layer6 = nn.Linear(32, 1)
 
         self.hard_rank  = hard_rank
         self.hard_prob  = hard_prob
@@ -31,6 +31,9 @@ class The_fine_tune_network(nn.Module):
         self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min=0.0, f_max=8000, pad=0, n_mels=40)
 
         self.torch_sigmoid = nn.Sigmoid()
+
+        # self.criterion  = torch.nn.CrossEntropyLoss()
+        self.criterion  = torch.nn.BCELoss()
         print('Initialised The_fine_tune_network Loss')
     
     #定義swish激活函數
@@ -41,14 +44,14 @@ class The_fine_tune_network(nn.Module):
         x = self.layer1(x)
         x = self.swish(x)
         x = self.layer2(x)
-        x = self.swish(x)
-        x = self.layer3(x)
-        x = self.swish(x)
-        x = self.layer4(x)
-        x = self.swish(x)
-        x = self.layer5(x)
-        x = self.swish(x)
-        x = self.layer6(x)
+        # x = self.swish(x)
+        # x = self.layer3(x)
+        # x = self.swish(x)
+        # x = self.layer4(x)
+        # x = self.swish(x)
+        # x = self.layer5(x)
+        # x = self.swish(x)
+        # x = self.layer6(x)
         x = self.torch_sigmoid(x)
         return x
 
@@ -74,17 +77,39 @@ class The_fine_tune_network(nn.Module):
         negidx      = self.mineHardNegative(output.detach())
 
         out_negative = out_positive[negidx,:]
-        labelnp     = numpy.array([1]*len(out_positive)+[0]*len(out_negative))
+        labelnp     = torch.tensor(numpy.array([1.0]*len(out_positive)+[0.0]*len(out_negative))).cuda()
 
         pos = torch.cat(( out_anchor, out_positive), 1)
         neg = torch.cat(( out_anchor, out_negative), 1)
-
+        # print(out_positive)
+        # print(out_negative)
         new_pos_score = self.classifier_model(pos).squeeze(1)
         new_neg_score = self.classifier_model(neg).squeeze(1)
-            
-        nloss   = torch.mean(F.relu(torch.pow(new_pos_score, 2) - torch.pow(new_neg_score, 2) + self.margin))
-        scores  = torch.cat([new_pos_score,new_neg_score],dim=0).detach().cpu().numpy()
-        errors  = tuneThresholdfromScore(scores, labelnp, []);
+        # print(new_pos_score)
+        # print(new_neg_score)
+        # print(labelnp)
+        # exit()
+        total_socre = torch.cat((new_pos_score, new_neg_score), dim=0)
+        # print(total_socre.size())
+        # print(labelnp.size())
+        # total_socre = torch.cat((total_socre, torch.tensor([2])), dim=0)
+        # print(total_socre.unsqueeze(1))
+        # nloss   = self.criterion(total_socre, labelnp)
+
+        nloss = self.criterion(total_socre, labelnp.float())
+        # exit()
+        # print(total_socre.size())
+        # x = total_socre[:,0]
+        # y= total_socre[:,1]
+        # x = y-x
+        # x = x.unsqueeze(1)
+        # print(x.size())
+        # prec1, _ = accuracy(x.detach().cpu(), labelnp.detach().cpu(), topk=(1, 5))
+        errors  = tuneThresholdfromScore(total_socre.detach().cpu(), labelnp.detach().cpu(), []);
+        # exit()
+        # nloss   = torch.mean(F.relu(torch.pow(new_pos_score, 2) - torch.pow(new_neg_score, 2) + self.margin))
+        # scores  = torch.cat([new_pos_score,new_neg_score],dim=0).detach().cpu().numpy()
+        # errors  = tuneThresholdfromScore(scores, labelnp, []);
         # print(labelnp)
         # print(scores)
         return nloss, errors[1]

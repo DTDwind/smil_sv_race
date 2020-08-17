@@ -88,10 +88,10 @@ elif args.SpeakerNet_type == 'SpeakerNet_eat_pairwise_distance':
     from SpeakerNet_eat_pairwise_distance import SpeakerNet
 elif args.SpeakerNet_type == 'SpeakerNet_lstm_triplet':
     from SpeakerNet_lstm_triplet import SpeakerNet
+    load_all_wav = True
 elif args.SpeakerNet_type == 'SpeakerNet_DNN_classifier':
     from SpeakerNet_DNN_classifier import SpeakerNet
-    load_all_wav = True
-
+    
 s = SpeakerNet(**vars(args));
 it          = 1;
 prevloss    = float("inf");

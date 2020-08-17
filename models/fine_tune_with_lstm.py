@@ -20,8 +20,8 @@ class The_fine_tune_network(nn.Module):
         self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min=0.0, f_max=8000, pad=0, n_mels=40)
 
         self.torch_sigmoid = nn.Sigmoid()
-
-        self.nbrnn = torch.nn.LSTM(input_size, out_size/2, elayers=6, batch_first=True, dropout=0.05, bidirectional=True)
+        elayers = 6
+        self.nbrnn = torch.nn.LSTM(input_size, out_size, elayers, batch_first=True, dropout=0.05, bidirectional=True)
         print('Initialised The_fine_tune_network Loss')
     
     #定義swish激活函數
@@ -29,7 +29,10 @@ class The_fine_tune_network(nn.Module):
         return x * torch.sigmoid(x)
 
     def lstm_encoder_model(self, x):
+        print('TAT')
         x = self.torchfb(x)
+        print(x.size())
+        exit()
         ilens
         xs_pack = pack_padded_sequence(xs_pad, ilens, batch_first=True)
         x,(_, _) = self.nbrnn(x)
@@ -37,6 +40,6 @@ class The_fine_tune_network(nn.Module):
         return x
 
     def forward(self, target_feat):
-        x = lstm_encoder_model(target_feat)
+        x = self.lstm_encoder_model(target_feat)
      
         return x

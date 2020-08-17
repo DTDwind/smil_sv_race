@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=2
+export CUDA_VISIBLE_DEVICES=3
 nvidia-smi
 python3.6 trainSpeakerNet.py \
         --model ResNetSE34L  \
@@ -6,7 +6,7 @@ python3.6 trainSpeakerNet.py \
         --trainfunc triplet  \
         --optimizer adam  \
         --save_path data/LSTM_triplet \
-        --batch_size 400  \
+        --batch_size 12  \
         --max_frames 200  \
         --nSpeakers 2  \
         --train_list data_list/vox2020Baseline/train_list.txt  \
@@ -17,5 +17,5 @@ python3.6 trainSpeakerNet.py \
         --margin 0.1 \
         --lr_decay 0.95 \
         --initial_model initial_model/baseline_lite_ap.model \
-        --nDataLoaderThread 10 \
+        --nDataLoaderThread 1 \
         --SpeakerNet_type SpeakerNet_lstm_triplet

@@ -17,12 +17,12 @@ class The_fine_tune_network(nn.Module):
         print('The_fine_tune_network prep')
         super(The_fine_tune_network, self).__init__()
         #self.fc = nn.Linear(input_size, out_size)   
-        self.layer1 = nn.Linear(64481, 1024)
-        self.layer2 = nn.Linear(1024, 1024)
-        self.layer3 = nn.Linear(1024, 512) 
-        self.layer4 = nn.Linear(512, 128)
-        self.layer5 = nn.Linear(128, 16)
-        self.layer6 = nn.Linear(16, 1)
+        # self.layer1 = nn.Linear(64481, 1024)
+        # self.layer2 = nn.Linear(1024, 1024)
+        # self.layer3 = nn.Linear(1024, 512) 
+        # self.layer4 = nn.Linear(512, 128)
+        # self.layer5 = nn.Linear(128, 16)
+        # self.layer6 = nn.Linear(16, 1)
 
         self.hard_rank  = hard_rank
         self.hard_prob  = hard_prob
@@ -31,6 +31,9 @@ class The_fine_tune_network(nn.Module):
         self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min=0.0, f_max=8000, pad=0, n_mels=40)
 
         self.torch_sigmoid = nn.Sigmoid()
+
+        
+        self.nbrnn = torch.nn.LSTM(input_size, out_size/2, elayers=6, batch_first=True, dropout=0.05, bidirectional=True)
         print('Initialised The_fine_tune_network Loss')
     
     #定義swish激活函數
@@ -51,9 +54,12 @@ class The_fine_tune_network(nn.Module):
         x = self.layer6(x)
         x = self.torch_sigmoid(x)
         return x
+    
+    def lstm_encoder_model(self, x):
+        self.nbrnn            
+        # https://zhuanlan.zhihu.com/p/59772104
+        return x
 
-    # https://blog.csdn.net/out_of_memory_error/article/details/81414986
-    #在這裡設定三層，每層加上swish激活函數
     def forward(self, x,  ori_feat, label=None, eval_mode=False):
         if eval_mode :
             x = x.unsqueeze(0)

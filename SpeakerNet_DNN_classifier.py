@@ -104,7 +104,6 @@ class SpeakerNet(nn.Module):
             tstart = time.time()
             self.zero_grad();
             feat = []
-            ori_feat = []
 
             for inp in data:
                 outp      = self.__S__.forward(inp.cuda())
@@ -112,15 +111,13 @@ class SpeakerNet(nn.Module):
                 if self.__train_normalize__:
                     outp   = F.normalize(outp, p=2, dim=1)
                 feat.append(outp)
-                ori_feat.append(inp.cuda())
 
             feat = torch.stack(feat,dim=1).squeeze()
-            ori_feat = torch.stack(ori_feat,dim=1).squeeze()
             
             label   = torch.LongTensor(data_label).cuda()
 
             # nloss, prec1 = self.__L__.forward(feat,label)
-            nloss, prec1 = self.fine_tune_network.forward(feat, ori_feat, label) # resnet score + ori_wav*2 (希望可以用 lstm 處理...) 輸出 暫定sigmoid
+            nloss, prec1 = self.fine_tune_network.forward(feat, label) # resnet score + ori_wav*2 (希望可以用 lstm 處理...) 輸出 暫定sigmoid
 
             loss    += nloss.detach().cpu();
             top1    += prec1
@@ -210,7 +207,7 @@ class SpeakerNet(nn.Module):
                 ref_feat = self.__S__.forward(inp1).detach().cpu()
             filename = '%06d.wav'%idx
             if feat_dir == '':
-                feats[file]     = [ref_feat,inp1]
+                feats[file]     = ref_feat
             else:
                 filedict[file]  = filename
                 if not self.feat_keep:
@@ -231,10 +228,8 @@ class SpeakerNet(nn.Module):
             data = line.split();
 
             if feat_dir == '':
-                ref_feat = feats[data[1]][0].cuda()
-                com_feat = feats[data[2]][0].cuda()
-                ori_ref = feats[data[1]][1].cuda()
-                ori_com = feats[data[2]][1].cuda()
+                ref_feat = feats[data[1]].cuda()
+                com_feat = feats[data[2]].cuda()
             else:
                 ref_feat = torch.load(os.path.join(feat_dir,filedict[data[1]])).cuda()
                 com_feat = torch.load(os.path.join(feat_dir,filedict[data[2]])).cuda()
@@ -243,22 +238,10 @@ class SpeakerNet(nn.Module):
                 ref_feat = F.normalize(ref_feat, p=2, dim=1)
                 com_feat = F.normalize(com_feat, p=2, dim=1)
             feat = []
-            ori_feat = []
             feat.append(ref_feat)
             feat.append(com_feat)
-            ori_feat.append(ori_ref)
-            ori_feat.append(ori_com)
             feat = torch.stack(feat,dim=1).squeeze()
-            ori_feat = torch.stack(ori_feat,dim=1).squeeze()
-            score = self.fine_tune_network.forward(feat, ori_feat, eval_mode=True).detach().cpu().numpy();
-            # print('QAQ')
-            # print(score)
-            # print('TAT')
-            # exit()
-            # dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy();
-            # print(dist.size())
-            # score = -1 * dist
-            # score = -1 * numpy.mean(dist);
+            score = self.fine_tune_network.forward(feat, eval_mode=True).detach().cpu().numpy();
 
             all_scores.append(score);  
             all_labels.append(int(data[0]));

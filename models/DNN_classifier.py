@@ -59,6 +59,7 @@ class The_fine_tune_network(nn.Module):
     #在這裡設定三層，每層加上swish激活函數
     def forward(self, x, label=None, eval_mode=False):
         if eval_mode :
+            x = x.unsqueeze(0)
             out_anchor      = x[:,0,:]
             out_positive    = x[:,1,:]
 

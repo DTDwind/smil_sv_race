@@ -16,8 +16,8 @@ from tqdm import tqdm
 
 # file_list_path = 'data_list/vox2020Baseline/train_list.txt'
 # train_path = '/share/nas165/chengsam/vox2/voxceleb2_dev/aac'
-file_list_path = 'data_list/vox2020Baseline/test_list_for_feat.txt'
-train_path = '/share/nas165/chengsam/vox1/voxceleb1_test/wav'
+file_list_path = 'data_list/vox2020Baseline/train_list.txt'
+train_path = '/share/nas165/chengsam/vox2/voxceleb2_dev/aac'
 max_frames = 200
 
 def round_down(num, divisor):

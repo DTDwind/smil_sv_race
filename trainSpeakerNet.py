@@ -91,7 +91,9 @@ elif args.SpeakerNet_type == 'SpeakerNet_lstm_triplet':
     load_all_wav = True
 elif args.SpeakerNet_type == 'SpeakerNet_DNN_classifier':
     from SpeakerNet_DNN_classifier import SpeakerNet
-    
+elif args.SpeakerNet_type == 'SpeakerNet_classifier_with_score':
+    from SpeakerNet_classifier_with_score import SpeakerNet
+
 s = SpeakerNet(**vars(args));
 it          = 1;
 prevloss    = float("inf");

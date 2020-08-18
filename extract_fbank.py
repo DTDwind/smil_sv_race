@@ -71,8 +71,8 @@ class DatasetLoader(object):
             for j in self.data_dict[i]:
                 # print(j)
                 wav_feat = loadWAV(j, self.max_frames, evalmode=False)
-                new_path = j.replace('/aac','/fbank_feat')
-                new_path = j.replace('/wav','/fbank_feat')
+                new_path = j.replace('/aac/','/fbank_feat/')
+                new_path = j.replace('/wav/','/fbank_feat/')
                 new_path = new_path.replace('.wav','.feat2.pt')
                 outp     = self.__S__.forward(wav_feat.cuda())
                 # print(new_path)

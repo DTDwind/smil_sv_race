@@ -1,6 +1,8 @@
-export CUDA_VISIBLE_DEVICES=2
+export CUDA_VISIBLE_DEVICES=1
 nvidia-smi
-python3.6 trainSpeakerNet.py \
+eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
+conda activate /share/homes/chengsam/miniconda3/envs/vox_env
+python3 trainSpeakerNet.py \
         --model ResNetSE34L  \
         --encoder_type SAP  \
         --trainfunc angleproto  \

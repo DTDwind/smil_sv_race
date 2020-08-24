@@ -29,14 +29,19 @@ class The_fine_tune_network(nn.Module):
         return x * torch.sigmoid(x)
 
     def lstm_encoder_model(self, x):
-        print('TAT')
-        x = self.torchfb(x)
-        print(x.size())
-        exit()
-        ilens
+        # print('TAT')
+        # x = self.torchfb(x)
+        # print(x.size())
+        # exit()
+        # ilens
         xs_pack = pack_padded_sequence(xs_pad, ilens, batch_first=True)
         x,(_, _) = self.nbrnn(x)
         # https://zhuanlan.zhihu.com/p/59772104
+
+        ys_pad, ilens = pad_packed_sequence(ys, batch_first=True)
+        if sub > 1:
+                ys_pad = ys_pad[:, ::sub]
+                ilens = [int(i + 1) // sub for i in ilens]
         return x
 
     def forward(self, target_feat):

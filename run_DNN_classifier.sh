@@ -8,7 +8,7 @@ python3 trainSpeakerNet.py \
         --trainfunc angleproto  \
         --optimizer adam  \
         --save_path data/DNN_classifier3 \
-        --batch_size 400  \
+        --batch_size 200  \
         --max_frames 200  \
         --nSpeakers 2  \
         --train_list data_list/vox2020Baseline/train_list.txt  \

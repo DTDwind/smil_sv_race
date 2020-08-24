@@ -93,6 +93,9 @@ elif args.SpeakerNet_type == 'SpeakerNet_DNN_classifier':
     from SpeakerNet_DNN_classifier import SpeakerNet
 elif args.SpeakerNet_type == 'SpeakerNet_classifier_with_score':
     from SpeakerNet_classifier_with_score import SpeakerNet
+elif args.SpeakerNet_type == 'SpeakerNet_QAQ':
+    from SpeakerNet_QAQ import SpeakerNet
+
 
 s = SpeakerNet(**vars(args));
 it          = 1;

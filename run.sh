@@ -1,4 +1,4 @@
-export CUDA_VISIBLE_DEVICES=3
+# export CUDA_VISIBLE_DEVICES=3
 python3 trainSpeakerNet.py \
         --model ResNetSE34L  \
         --encoder_type SAP  \

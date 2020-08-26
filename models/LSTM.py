@@ -20,11 +20,12 @@ class th_Fc(nn.Module):
     #     out = nn.Parameter(torch.FloatTensor(*size))
     #     nn.init.xavier_normal_(out)
     #     return out
+    
     #定義swish激活函數
     def swish(self,x):
         return x * torch.sigmoid(x)
 #https://blog.csdn.net/out_of_memory_error/article/details/81414986
-    #在這裡設定三層，每層加上swish激活函數
+    #在這裡設定三層，每層加上swish激活函數    
     def forward(self, x):
        # x = self.fc(x)
         x = self.layer1(x)

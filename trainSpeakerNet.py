@@ -7,9 +7,10 @@ import pdb
 import torch
 import glob
 from tuneThreshold import tuneThresholdfromScore
+from dcf_For_SpeakerNet import *
 from SpeakerNet import SpeakerNet
 from DatasetLoader import DatasetLoader
-
+import sys, argparse, os
 parser = argparse.ArgumentParser(description = "SpeakerNet");
 
 ## Data loader
@@ -95,9 +96,18 @@ for ii in range(0,it-1):
 if args.eval == True:
         
     sc, lab = s.evaluateFromListSave(args.test_list, print_interval=100, feat_dir=feat_save_path, test_path=args.test_path)
-    result = tuneThresholdfromScore(sc, lab, [1, 0.1]);
-    print('EER %2.4f'%result[1])
-
+    fnrs, fprs, thresholds = ComputeErrorRates(sc, lab) #fnrs->False negative rate ; fprs->False positive rate
+    #######參數設定##########
+    c_miss = 1.0
+    c_fa = 1.0
+    p_target = 0.05
+    ########################
+    mindcf, threshold = ComputeMinDcf(fnrs, fprs, thresholds, p_target,
+         c_miss, c_fa)
+    #result = tuneThresholdfromScore(sc, lab, [1, 0.1]);
+    #print('EER %2.4f'%result[1])
+    sys.stderr.write("minDCF is {0:.4f} at threshold {1:.4f} (p-target={2}, c-miss={3},"
+        "c-fa={4})\n".format(mindcf, threshold, p_target,c_miss, c_fa))
     quit();
 
 ## Write args to scorefile
@@ -168,14 +178,27 @@ while(1):
     if it % args.test_interval == 0:
 
         print(time.strftime("%Y-%m-%d %H:%M:%S"), it, "Evaluating...");
-
         sc, lab = s.evaluateFromListSave(args.test_list, print_interval=100, feat_dir=feat_save_path, test_path=args.test_path)
+        fnrs, fprs, thresholds = ComputeErrorRates(sc, lab) #fnrs->False negative rate ; fprs->False positive rate
+        ####### 參數設定 ##########
+        c_miss = 1.0
+        c_fa = 1.0
+        p_target = 0.05
+        ####### 計算 min detection cost 並寫檔至Score.txt########
+        mindcf, threshold = ComputeMinDcf(fnrs, fprs, thresholds, p_target,c_miss, c_fa)
+        sys.stdout.write("{0:.4f}\n".format(mindcf))
+        sys.stderr.write("minDCF is {0:.4f} at threshold {1:.4f} (p-target={2}, c-miss={3},"
+        "c-fa={4})\n".format(mindcf, threshold, p_target,c_miss, c_fa))
+        scorefile.write("minDCF is {0:.4f} at threshold {1:.4f} (p-target={2}, c-miss={3},"
+            "c-fa={4})\n".format(mindcf, threshold, p_target,c_miss, c_fa))
+        scorefile.flush()
+        ####### 計算 Equal Error rate 並寫檔至Score.txt#########
         result = tuneThresholdfromScore(sc, lab, [1, 0.1]);
-
+        print('EER %2.4f'%result[1])
         print(time.strftime("%Y-%m-%d %H:%M:%S"), "LR %f, TEER/T1 %2.2f, TLOSS %f, VEER %2.4f"%( max(clr), traineer, loss, result[1]));
         scorefile.write("IT %d, LR %f, TEER/T1 %2.2f, TLOSS %f, VEER %2.4f\n"%(it, max(clr), traineer, loss, result[1]));
+       
 
-        scorefile.flush()
         # for name, p in s.named_parameters():
         #     if "fc.fc.weight" in name or "fc.fc.bias" in name:
         #         clr = s.updateLearningRate(0.90) 

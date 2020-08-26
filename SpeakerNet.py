@@ -242,7 +242,11 @@ class SpeakerNet(nn.Module):
             dist = F.pairwise_distance(ref_feat.unsqueeze(-1).expand(-1,-1,num_eval), com_feat.unsqueeze(-1).expand(-1,-1,num_eval).transpose(0,2)).detach().cpu().numpy();
 
             score = -1 * numpy.mean(dist);
-
+            ######## 丟入Sigmoid 函數中讓值介於0~1之間 ########
+            sigmoid = nn.Sigmoid()
+            score=torch.tensor(score)
+            score=float(sigmoid(score))
+            #################################################
             all_scores.append(score);  
             all_labels.append(int(data[0]));
 

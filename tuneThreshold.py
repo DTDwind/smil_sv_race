@@ -10,7 +10,9 @@ import numpy
 import pdb
 
 def tuneThresholdfromScore(scores, labels, target_fa, target_fr = None):
-    
+    # pos_label=1 是指在y中標籤為1的是標準陽性標籤，其餘值是陰性
+    # labels=[1,0,1,0]
+    # scores=[0.1,0.2,0.3,0.1] labels對應的分數
     fpr, tpr, thresholds = metrics.roc_curve(labels, scores, pos_label=1)
     fnr = 1 - tpr
     

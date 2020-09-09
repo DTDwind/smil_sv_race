@@ -58,45 +58,28 @@ def loadWAV(filename, max_frames, evalmode=True, num_eval=10, load_all_wav=False
     return feat;
 
 def loadFeat(filename, max_frames, evalmode=True, num_eval=10):
-    new_path = filename.replace('/aac','/fbank_feat')
-    new_path = new_path.replace('/wav','/fbank_feat')
-    new_path = new_path.replace('.wav','.feat2.pt')
-    # print(new_path)
+    final_size = 202
+    new_path = filename.replace('.wav','.feat2.pt')
     feat = torch.load(new_path).cpu()
+    
     frame_size = feat.size()[1]
     
-    # print('QAQ')
-    # print(feat.size()[1])
-    # exit()
-    # feat = torch.FloatTensor(feat)
-    # print(feat.size())
-    max_frames = 2
-    if frame_size <= max_frames:
-        shortage    = math.floor( ( max_frames - frame_size + 1 ) / 2 )
-        inter_feat = F.pad(feat, (shortage, shortage), 'constant', value=0)
-        # audio       = numpy.pad(audio, (shortage, shortage), 'constant', constant_values=0)
-        # print('QAQQQ')
-    # print(frame_size)
-    # exit()
+    if frame_size <= final_size:
+        print('喵嗚嗚~ 快來檢查feat的長度 (loadFeat)')
     if evalmode:
-        startframe  = torch.linspace(0, frame_size-max_frames, steps=num_eval)
-        # startframe = numpy.linspace(0,202,num=num_eval+1)
-        # rag = startframe[1] - startframe[0]
+        startframe = numpy.linspace(0, frame_size-final_size-1, num=num_eval, dtype=int )
         feats = []
-        # print(startframe)
-        # exit()
-        # for i in range(10):
-        #     feats.append(feat[:,int(i):int(i)+int(20)])
         for asf in startframe:
-            feats.append(feat[int(asf):int(asf)+max_frames])
-        # print(numpy.array(feats).size())
-        # print(feats)
-    # exit()
+            feats.append(feat[:, int(asf):int(asf)+final_size])
+    else:
+        startframe = numpy.array([numpy.int64(random.random()*(frame_size-final_size-1))])
+        # print(startframe)
+        feats = []
+        for asf in startframe:
+            feats.append(feat[:, int(asf):int(asf)+final_size])
+
     feat = numpy.stack(feats,axis=0)
     feat = torch.FloatTensor(feat)
-    # print(feat.size())
-    # exit()
-
     # EER 46.2460
     # EER 5.4984
     # ERR:2.2322
@@ -156,7 +139,10 @@ class DatasetLoader(object):
             for ii in range(0,self.gSize):
                 feat = []
                 for ij in range(index,index+self.batch_size):
-                    feat.append(loadWAV(self.data_list[ij][ii], self.max_frames, evalmode=False, load_all_wav=self.load_all_wav));
+                    if self.load_all_wav == 2:
+                        feat.append(loadFeat(self.data_list[ij][ii], self.max_frames, evalmode=False));
+                    else:
+                        feat.append(loadWAV(self.data_list[ij][ii], self.max_frames, evalmode=False, load_all_wav=self.load_all_wav));
                 # feat = rnn_utils.pad_sequence(feat, batch_first=True)
                 in_data.append(torch.cat(feat, dim=0));
                 # in_data.append(feat);

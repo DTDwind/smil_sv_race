@@ -76,8 +76,7 @@ class ResNetSE(nn.Module):
         # exit()
         # print('res start')
         # torch.Size([5, 32240])
-
-        x = self.torchfb(x)+1e-6 
+        # x = self.torchfb(x)+1e-6 
 
         # print(x.size()) # torch.Size([5, 40, 202])
         x = self.instancenorm(x.log()).unsqueeze(1).detach()

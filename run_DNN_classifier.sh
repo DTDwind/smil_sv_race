@@ -8,7 +8,7 @@ python3 trainSpeakerNet.py \
         --trainfunc angleproto  \
         --optimizer adam  \
         --save_path data/DNN_classifier3 \
-        --batch_size 200  \
+        --batch_size 400  \
         --max_frames 200  \
         --nSpeakers 2  \
         --train_list data_list/vox2020Baseline/train_list.txt  \
@@ -17,5 +17,5 @@ python3 trainSpeakerNet.py \
         --test_list data_list/vox2020Baseline/veri_test.txt \
         --test_interval 1 \
         --initial_model baseline_lite_ap.model \
-        --nDataLoaderThread 10 \
+        --nDataLoaderThread 3 \
         --SpeakerNet_type SpeakerNet_DNN_classifier

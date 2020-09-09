@@ -12,6 +12,7 @@ from tuneThreshold import tuneThresholdfromScore
 # from DatasetFeatLoader import DatasetLoader
 from DatasetLoader_new import DatasetLoader
 
+
 parser = argparse.ArgumentParser(description = "SpeakerNet");
 
 ## Data loader
@@ -95,6 +96,11 @@ elif args.SpeakerNet_type == 'SpeakerNet_classifier_with_score':
     from SpeakerNet_classifier_with_score import SpeakerNet
 elif args.SpeakerNet_type == 'SpeakerNet_QAQ':
     from SpeakerNet_QAQ import SpeakerNet
+    load_all_wav =  2
+elif args.SpeakerNet_type == 'SpeakerNet_featloader':
+    from SpeakerNet_featloader import SpeakerNet
+    load_all_wav =  2
+
 
 
 s = SpeakerNet(**vars(args));

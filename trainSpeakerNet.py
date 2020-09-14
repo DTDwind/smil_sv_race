@@ -7,6 +7,8 @@ import pdb
 import torch
 import glob
 from tuneThreshold import tuneThresholdfromScore
+from dcf_For_SpeakerNet import *
+import sys, argparse, os
 # from SpeakerNet import SpeakerNet
 # from DatasetLoader import DatasetLoader
 # from DatasetFeatLoader import DatasetLoader

@@ -115,3 +115,4 @@ venv.bak/
 vox_Xvector/vox2_dev_x_vector/spk_xvector.ark
 vox_Xvector/vox2_test_x_vector/spk_xvector.ark
 vox_Xvector/vox2_train_x_vector/spk_xvector.ark
+vox_Xvector

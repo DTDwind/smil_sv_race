@@ -105,6 +105,10 @@ elif args.SpeakerNet_type == 'SpeakerNet_featloader':
 elif args.SpeakerNet_type == 'SpeakerNet_Xvector':
     from SpeakerNet_Xvector import SpeakerNet
     load_all_wav =  2
+elif args.SpeakerNet_type == 'SpeakerNet_X_combine':
+    from SpeakerNet_X_combine import SpeakerNet
+    load_all_wav =  2
+
 
 
 s = SpeakerNet(**vars(args));

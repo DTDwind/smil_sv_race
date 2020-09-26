@@ -243,6 +243,7 @@ class SpeakerNet(nn.Module):
 
         print('')
         all_scores = [];
+        all_X_scores = [];
         all_labels = [];
         tstart = time.time()
 
@@ -277,14 +278,16 @@ class SpeakerNet(nn.Module):
             dist = F.pairwise_distance(ref_feat.unsqueeze(-1).expand(-1,-1,num_eval), com_feat.unsqueeze(-1).expand(-1,-1,num_eval).transpose(0,2)).detach().cpu().numpy();
 
             score = -1 * numpy.mean(dist);
-            X_score = float(self.sigmoid(torch.tensor(X_score*1e143)))
-            score = float(self.sigmoid(torch.tensor(score)))
+            # N_X_score = X_score - 
+            # X_score = float(self.sigmoid(torch.tensor(X_score*1e143)))
+            # score = float(self.sigmoid(torch.tensor(score)))
             # print(X_score)
             # print(score)
             # exit()
-            score = (0.5*X_score + 0.5*score)
+            # score = (0.5*X_score + 0.5*score)
 
             all_scores.append(score);  
+            all_X_scores.append(X_score);  
             all_labels.append(int(data[0]));
 
             if idx % print_interval == 0:
@@ -298,10 +301,17 @@ class SpeakerNet(nn.Module):
                 shutil.rmtree(feat_dir)
 
         print('\n')
+        all_scores = all_scores
+        all_X_scores = all_X_scores
+        all_N_scores = self.max_min_normalization(all_scores)
+        all_N_X_scores = self.max_min_normalization(all_X_scores)
+        all_scores = (0.95*all_N_scores + 0.05*all_N_X_scores)# .tolist()
 
+        print(' Computing Done! ')
         return (all_scores, all_labels);
 
-
+    def max_min_normalization(self, x):
+        return numpy.array([(float(i)-min(x))/float(max(x)-min(x)) for i in x])
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Update learning rate
     ## ===== ===== ===== ===== ===== ===== ===== =====

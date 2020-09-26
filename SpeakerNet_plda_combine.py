@@ -298,13 +298,27 @@ class SpeakerNet(nn.Module):
 
         all_N_scores = self.max_min_normalization(all_scores)
         all_N_plda_scores = self.max_min_normalization(all_plda_scores)
-        all_scores = (0.5*all_N_scores + 0.5*all_N_plda_scores)# .tolist()
+        a = 0.5
+        all_scores = (a*all_N_scores + (1-a)*all_N_plda_scores)# .tolist()
+        # a   EER
+        # 1.0 2.2322
+        # 0.8 2.2587
+        # 0.6 2.2216
+        # 0.5 2.1792
+        # 0.4 2.2269
+        # 0.2 2.4973
+        # 0.0 3.3881
+        
+        
 
         print(' Computing Done! ')
         return (all_scores, all_labels);
 
     def max_min_normalization(self, x):
-        return numpy.array([(float(i)-min(x))/float(max(x)-min(x)) for i in x])
+        x = numpy.array(x)
+        return (x - x.min()) / (x.max() - x.min())
+        # return numpy.array([(float(i)-min(x))/float(max(x)-min(x)) for i in x])
+
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Update learning rate
     ## ===== ===== ===== ===== ===== ===== ===== =====

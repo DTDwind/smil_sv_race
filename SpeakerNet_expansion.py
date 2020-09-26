@@ -271,9 +271,7 @@ class SpeakerNet(nn.Module):
             if self.__test_normalize__:
                 ref_feat = F.normalize(ref_feat, p=2, dim=1)
                 com_feat = F.normalize(com_feat, p=2, dim=1)
-            # X_dist = F.pairwise_distance(X_ref_feat.unsqueeze(0), X_com_feat.unsqueeze(0)).detach().cpu().numpy();
             
-            # X_score = -1 * numpy.mean(X_dist);
             plda_score = plda.get_plda_score(plda_id)
 
             dist = F.pairwise_distance(ref_feat.unsqueeze(-1).expand(-1,-1,num_eval), com_feat.unsqueeze(-1).expand(-1,-1,num_eval).transpose(0,2)).detach().cpu().numpy();
@@ -315,8 +313,6 @@ class SpeakerNet(nn.Module):
         for param_group in self.__optimizer__.param_groups:
             param_group['lr'] = param_group['lr']*alpha
             learning_rate.append(param_group['lr'])
-        # print('learning_rate')
-        # print(learning_rate)
         return learning_rate;
 
 
@@ -325,7 +321,6 @@ class SpeakerNet(nn.Module):
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
     def saveParameters(self, path):
-        
         torch.save(self.state_dict(), path);
 
 

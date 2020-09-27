@@ -114,7 +114,9 @@ elif args.SpeakerNet_type == 'SpeakerNet_plda_combine':
 elif args.SpeakerNet_type == 'SpeakerNet_expansion':
     from SpeakerNet_expansion import SpeakerNet
     load_all_wav =  2
-
+elif args.SpeakerNet_type == 'SpeakerNet_cal_all_Dvector':
+    from SpeakerNet_cal_all_Dvector import SpeakerNet
+    load_all_wav =  False
 
 
 

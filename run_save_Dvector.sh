@@ -1,4 +1,4 @@
-# 以後用這個當測試專用的...
+
 export CUDA_VISIBLE_DEVICES=3
 nvidia-smi
 eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"

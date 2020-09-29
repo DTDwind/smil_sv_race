@@ -117,7 +117,9 @@ elif args.SpeakerNet_type == 'SpeakerNet_expansion':
 elif args.SpeakerNet_type == 'SpeakerNet_cal_all_Dvector':
     from SpeakerNet_cal_all_Dvector import SpeakerNet
     load_all_wav =  False
-
+elif args.SpeakerNet_type == 'SpeakerNet_cal_all_score':
+    from SpeakerNet_cal_all_score import SpeakerNet
+    load_all_wav =  False
 
 
 

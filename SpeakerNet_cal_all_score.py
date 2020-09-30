@@ -21,6 +21,9 @@ from models.lstm import *
 from models.fine_tune_dnn import *
 from tqdm import tqdm 
 import glob
+import multiprocessing.dummy as mp 
+import istarmap  # import to apply patch
+
 
 class SpeakerNet(nn.Module):
 
@@ -40,6 +43,8 @@ class SpeakerNet(nn.Module):
         # self.fine_tune_DNN = th_Fc(nOut, nOut).cuda();
 
         self.__test_normalize__     = True
+        self.setfiles_global = ''
+        self.feats_global = ''
         # if trainfunc == 'angleproto':
         #     self.__L__ = AngleProtoLoss().cuda()
         #     self.__train_normalize__    = True
@@ -253,34 +258,64 @@ class SpeakerNet(nn.Module):
 
         #     all_scores.append(score);  
         #     all_labels.append(int(data[0]));
-        with open('dev_score.txt', 'w') as out:
-            for ref_idx, ref_file in tqdm(enumerate(setfiles), ascii=True):
-                for idx, com_file in setfiles:
-                    feat_dir = ''
-                    if feat_dir == '':
-                        ref_feat = feats[ref_file]
-                        com_feat = feats[com_file]
-                    else:
-                        print('ERROR')
-                    if self.__test_normalize__:
-                        ref_feat = F.normalize(ref_feat, p=2, dim=1)
-                        com_feat = F.normalize(com_feat, p=2, dim=1)
-                    # dist = F.pairwise_distance(ref_feat.unsqueeze(-1).expand(-1,-1,num_eval), com_feat.unsqueeze(-1).expand(-1,-1,num_eval).transpose(0,2)).detach().cpu().numpy();
-                    dist = F.pairwise_distance(ref_feat.unsqueeze(-1).expand(-1,-1,num_eval), com_feat.unsqueeze(-1).expand(-1,-1,num_eval).transpose(0,2)).numpy();
-                    score = -1 * numpy.mean(dist);
-                    # score = self.sigmoid(score)
-                    out.write("%s %s %s\n"%(score, ref_file, com_file))
-                    # all_scores.append(score);  
-                    # all_labels.append(int(data[0]));
 
-        # EER 2.3648
+        ## ---------------------------------------------------------------
 
+        # with open('dev_score_QAQQQ.txt', 'w') as out:
+        #     for ref_idx, ref_file in tqdm(enumerate(setfiles), ascii=True):
+        #         for idx, com_file in enumerate(setfiles):
+        #             if idx <= ref_idx: continue
+        #             feat_dir = ''
+        #             if feat_dir == '':
+        #                 ref_feat = feats[ref_file]
+        #                 com_feat = feats[com_file]
+        #             else:
+        #                 print('ERROR')
+        #             if self.__test_normalize__:
+        #                 ref_feat = F.normalize(ref_feat, p=2, dim=1)
+        #                 com_feat = F.normalize(com_feat, p=2, dim=1)
+        #             dist = F.pairwise_distance(ref_feat.unsqueeze(-1).expand(-1,-1,num_eval), com_feat.unsqueeze(-1).expand(-1,-1,num_eval).transpose(0,2)).numpy();
+        #             score = -1 * numpy.mean(dist);
+        #             out.write("%s %s %s\n"%(score, ref_file, com_file))
+        #             out.write("%s %s %s\n"%(score, com_file, ref_file))
+        # # EER 2.3648
 
+        ## ---------------------------------------------------------------
+        self.feats_global = feats
+        self.setfiles_global = setfiles
+        cpus = os.cpu_count() 
+        print("# of cpu: "+str(cpus))
+        p=mp.Pool(cpus)
+        # p.starmap(self.thread_score, enumerate(setfiles))
+        for _ in tqdm(p.istarmap(self.thread_score, enumerate(setfiles)), total=len(setfiles)):pass
+        p.close()
+        p.join()
         print('\n')
 
         print(' Computing Done! ')
         quit()
         return (all_scores, all_labels);
+
+    def thread_score(self, idx, file_name):
+        ref_file = file_name
+        ref_idx = idx
+        with open('dev_score_test/dev_score_'+str(idx)+'.txt', 'w') as out:
+            for idx, com_file in enumerate(self.setfiles_global):
+                if idx <= ref_idx: continue
+                feat_dir = ''
+                if feat_dir == '':
+                    ref_feat = self.feats_global[ref_file]
+                    com_feat = self.feats_global[com_file]
+                else:
+                    print('ERROR')
+                if self.__test_normalize__:
+                    ref_feat = F.normalize(ref_feat, p=2, dim=1)
+                    com_feat = F.normalize(com_feat, p=2, dim=1)
+                dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).numpy();
+                score = -1 * numpy.mean(dist);
+                out.write("%s %s %s\n"%(score, ref_file, com_file))
+                out.write("%s %s %s\n"%(score, com_file, ref_file))
+
 
     def max_min_normalization(self, x):
         return numpy.array([(float(i)-min(x))/float(max(x)-min(x)) for i in x])

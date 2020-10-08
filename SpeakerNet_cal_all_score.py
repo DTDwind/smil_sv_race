@@ -207,8 +207,8 @@ class SpeakerNet(nn.Module):
 
                 data = line.split();
 
-                files.append(data[1])
-                files.append(data[2]) 
+                files.append(data[0])
+                files.append(data[1]) 
                 lines.append(line)
 
         setfiles = list(set(files))
@@ -223,7 +223,7 @@ class SpeakerNet(nn.Module):
             #     ref_feat = self.__S__.forward(inp1).detach().cpu()
             filename = '%06d.wav'%idx
             # filename = '%06d.feat.pt'%idx
-            feat_dir = 'data/Dvector_dev/'
+            feat_dir = 'data/Dvector_test/'
             if feat_dir == '':
                 feats[file]     = ref_feat
             else:
@@ -299,7 +299,7 @@ class SpeakerNet(nn.Module):
     def thread_score(self, idx, file_name):
         ref_file = file_name
         ref_idx = idx
-        with open('dev_score_test/dev_score_'+str(idx)+'.txt', 'w') as out:
+        with open('test_score2/test_score_'+str(idx)+'.txt', 'w') as out:
             for idx, com_file in enumerate(self.setfiles_global):
                 if idx <= ref_idx: continue
                 feat_dir = ''

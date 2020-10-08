@@ -1,5 +1,5 @@
 # 以後用這個當測試專用的...
-export CUDA_VISIBLE_DEVICES=3
+export CUDA_VISIBLE_DEVICES=1
 nvidia-smi
 eval "$(command conda 'shell.bash' 'hook' 2> /dev/null)"
 conda activate /share/homes/chengsam/miniconda3/envs/vox_env

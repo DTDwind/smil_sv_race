@@ -113,13 +113,26 @@ elif args.SpeakerNet_type == 'SpeakerNet_plda_combine':
     load_all_wav =  2
 elif args.SpeakerNet_type == 'SpeakerNet_expansion':
     from SpeakerNet_expansion import SpeakerNet
-    load_all_wav =  2
+    load_all_wav =  False
 elif args.SpeakerNet_type == 'SpeakerNet_cal_all_Dvector':
     from SpeakerNet_cal_all_Dvector import SpeakerNet
     load_all_wav =  False
 elif args.SpeakerNet_type == 'SpeakerNet_cal_all_score':
     from SpeakerNet_cal_all_score import SpeakerNet
     load_all_wav =  False
+elif args.SpeakerNet_type == 'SpeakerNet_cal_all_score_loacl':
+    from SpeakerNet_cal_all_score_loacl import SpeakerNet
+    load_all_wav =  False
+elif args.SpeakerNet_type == 'SpeakerNet_cal_all_score_loacl_sota':
+    from SpeakerNet_cal_all_score_loacl_sota import SpeakerNet
+    load_all_wav =  False
+elif args.SpeakerNet_type == 'SpeakerNet_cal_all_score_loacl_sh87':
+    from SpeakerNet_cal_all_score_loacl_sh87 import SpeakerNet
+    load_all_wav =  False
+elif args.SpeakerNet_type == 'SpeakerNet_cal_all_score_loacl_esp2080':
+    from SpeakerNet_cal_all_score_loacl_esp2080 import SpeakerNet
+    load_all_wav =  False
+
 
 
 
@@ -150,6 +163,14 @@ if args.eval == True:
     sc, lab = s.evaluateFromListSave(args.test_list, print_interval=100, feat_dir=feat_save_path, test_path=args.test_path)
     result = tuneThresholdfromScore(sc, lab, [1, 0.1]);
     print('EER %2.4f'%result[1])
+    fnrs, fprs, thresholds = ComputeErrorRates(sc, lab) #fnrs->False negative rate ; fprs->False positive rate
+    ####### 參數設定 ##########
+    c_miss = 1.0
+    c_fa = 1.0
+    p_target = 0.05
+    ####### 計算 min detection cost 並寫檔至Score.txt########
+    mindcf, threshold = ComputeMinDcf(fnrs, fprs, thresholds, p_target,c_miss, c_fa)
+    print("mindcf: %2.4f"%mindcf)
 
     quit();
 

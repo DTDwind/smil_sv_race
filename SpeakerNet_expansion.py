@@ -21,137 +21,29 @@ from models.lstm import *
 from models.fine_tune_dnn import *
 from tqdm import tqdm 
 import glob
-from plda_Loader import PLDALoader 
+import multiprocessing.dummy as mp 
+import istarmap  # import to apply patch
+
 
 class SpeakerNet(nn.Module):
 
     def __init__(self, max_frames, lr = 0.0001, margin = 1, scale = 1, hard_rank = 0, hard_prob = 0, model="alexnet50", nOut = 512, nSpeakers = 1000, optimizer = 'adam', encoder_type = 'SAP', normalize = True, trainfunc='contrastive', **kwargs):
         super(SpeakerNet, self).__init__();
 
-        self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min=0.0, f_max=8000, pad=0, n_mels=40)
+        # self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min=0.0, f_max=8000, pad=0, n_mels=40)
 
 
         argsdict = {'nOut': nOut, 'encoder_type':encoder_type}
 
-        SpeakerNetModel = importlib.import_module('models.'+model).__getattribute__(model)
-        self.__S__ = SpeakerNetModel(**argsdict).cuda();
         self.sigmoid = nn.Sigmoid()
-        # self.fc = th_Fc(nOut ,nOut).cuda()
-        # self.lstm = rnn_LSTM(nOut, nOut).cuda();
-        # self.fine_tune_DNN = th_Fc(nOut, nOut).cuda();
 
-
-        if trainfunc == 'angleproto':
-            self.__L__ = AngleProtoLoss().cuda()
-            self.__train_normalize__    = True
-            self.__test_normalize__     = True
-        elif trainfunc == 'ge2e':
-            self.__L__ = GE2ELoss().cuda()
-            self.__train_normalize__    = True
-            self.__test_normalize__     = True
-        elif trainfunc == 'amsoftmax':
-            self.__L__ = AMSoftmax(in_feats=nOut, n_classes=nSpeakers, m=margin, s=scale).cuda()
-            self.__train_normalize__    = False
-            self.__test_normalize__     = True
-        elif trainfunc == 'aamsoftmax':
-            self.__L__ = AAMSoftmax(in_feats=nOut, n_classes=nSpeakers, m=margin, s=scale).cuda()
-            self.__train_normalize__    = False
-            self.__test_normalize__     = True
-        elif trainfunc == 'softmax':
-            self.__L__ = SoftmaxLoss(in_feats=nOut, n_classes=nSpeakers).cuda()
-            self.__train_normalize__    = False
-            self.__test_normalize__     = True
-        elif trainfunc == 'proto':
-            self.__L__ = ProtoLoss().cuda()
-            self.__train_normalize__    = False
-            self.__test_normalize__     = False
-        elif trainfunc == 'triplet':
-            self.__L__ = PairwiseLoss(loss_func='triplet', hard_rank=hard_rank, hard_prob=hard_prob, margin=margin).cuda()
-            self.__train_normalize__    = True
-            self.__test_normalize__     = True
-        elif trainfunc == 'contrastive':
-            self.__L__ = PairwiseLoss(loss_func='contrastive', hard_rank=hard_rank, hard_prob=hard_prob, margin=margin).cuda()
-            self.__train_normalize__    = True
-            self.__test_normalize__     = True
-        else:
-            raise ValueError('Undefined loss.')
-
-        if optimizer == 'adam':
-            # self.__optimizer__ = torch.optim.Adam(self.parameters(), lr = lr);
-            # 設定學習率SpeakerNet設定'lr':1e-6、全連結層'lr':0.001
-            self.__optimizer__ = torch.optim.Adam([{'params':self.__S__.parameters(),'lr':0.001},
-                                                #    {'params':self.fine_tune_DNN.parameters(),'lr':0.001},
-                                                   {'params':self.__L__.parameters(),'lr':0.001}
-                                                  ]);
-            # https://blog.csdn.net/qq_34914551/article/details/87699317
-        elif optimizer == 'sgd':
-            self.__optimizer__ = torch.optim.SGD(self.parameters(), lr = lr, momentum = 0.9, weight_decay=5e-5);
-        else:
-            raise ValueError('Undefined optimizer.')
+        self.__test_normalize__     = True
+        self.setfiles_global = ''
+        self.feats_global = ''
         
         self.__max_frames__ = max_frames;
         self.feat_keep = False
 
-    ## ===== ===== ===== ===== ===== ===== ===== =====
-    ## Train network
-    ## ===== ===== ===== ===== ===== ===== ===== =====
-
-    def train_network(self, loader):
-
-        self.train();
-
-        stepsize = loader.batch_size;
-
-        counter = 0;
-        index   = 0;
-        loss    = 0;
-        top1    = 0     # EER or accuracy
-
-        criterion = torch.nn.CrossEntropyLoss()
-        for data, data_label in loader:
-           
-            tstart = time.time()
-
-            self.zero_grad();
-            
-            feat = []
-            
-            for inp in data:
-                
-                outp      = self.__S__.forward(inp.cuda())
-                
-
-                if self.__train_normalize__:
-                    outp   = F.normalize(outp, p=2, dim=1)
-                feat.append(outp)
-
-            feat = torch.stack(feat,dim=1).squeeze()
-            
-            label   = torch.LongTensor(data_label).cuda()
-            nloss, prec1 = self.__L__.forward(feat,label)
-
-            loss    += nloss.detach().cpu();
-            top1    += prec1
-            counter += 1;
-            index   += stepsize;
-
-            nloss.backward(); # ------------ backward 更新參數
-            self.__optimizer__.step();
-
-            telapsed = time.time() - tstart
-
-            sys.stdout.write("\rProcessing (%d/%d) "%(index, loader.nFiles));
-            sys.stdout.write("Loss %f EER/T1 %2.3f%% - %.2f Hz "%(loss/counter, top1/counter, stepsize/telapsed));
-            sys.stdout.write("Q:(%d/%d)"%(loader.qsize(), loader.maxQueueSize));
-            sys.stdout.flush();
-
-        sys.stdout.write("\n");
-        
-        return (loss/counter, top1/counter);
-
-    ## ===== ===== ===== ===== ===== ===== ===== =====
-    ## Read data from list
-    ## ===== ===== ===== ===== ===== ===== ===== =====
 
     def readDataFromList(self, listfilename):
 
@@ -185,14 +77,8 @@ class SpeakerNet(nn.Module):
         files       = []
         filedict    = {}
         feats       = {}
+        self.all_score_list = {}
         tstart      = time.time()
-
-        if feat_dir != '':
-            if not self.feat_keep:
-                feat_dir = ''
-                print('Saving temporary files to %s'%feat_dir)
-                # if not(os.path.exists(feat_dir)):
-                #     os.makedirs(feat_dir)
 
         ## Read all lines
         with open(listfilename) as listfile:
@@ -200,11 +86,10 @@ class SpeakerNet(nn.Module):
                 line = listfile.readline();
                 if (not line): #  or (len(all_scores)==1000) 
                     break;
-
                 data = line.split();
 
-                files.append(data[1])
-                files.append(data[2])
+                files.append(data[1]) # for dev
+                files.append(data[2]) 
                 lines.append(line)
 
         setfiles = list(set(files))
@@ -212,36 +97,33 @@ class SpeakerNet(nn.Module):
 
         ## Save all features to file
         print("Reading File");
+        print("setfiles len: "+str(len(setfiles)))
         for idx, file in tqdm(enumerate(setfiles), ascii=True):
-            if not self.feat_keep:
-                # inp1 = loadWAV(os.path.join(test_path,file), self.__max_frames__, evalmode=True, num_eval=num_eval).cuda()
-                inp1 = loadFeat(os.path.join(test_path,file), self.__max_frames__, evalmode=True, num_eval=num_eval).cuda()
-                # inp1 = self.torchfb(inp1)+1e-6 
-                # inp1 = loadFeat(os.path.join(test_path,file), self.__max_frames__, evalmode=True, num_eval=num_eval).cuda()
-                
-                # ref_feat = self.__S__.forward(inp1).detach().cpu()
-                # ref_feat = self.lstm.forward(ref_feat).detach().cpu() 
-                ref_feat = self.__S__.forward(inp1).detach().cpu()
-                # ref_feat = self.fine_tune_DNN.forward(ref_feat).detach().cpu()
-                # print(inp1.size())
-                # print('inp1_feat')
-                # exit()
             filename = '%06d.wav'%idx
-            # filename = '%06d.feat.pt'%idx
-            # print('QAQ')
-            # exit()
+
+            # feat_dir = '/share/nas165/chengsam/voxceleb2020_prog/fully_supervised_speaker_verification/voxceleb_trainer/data/Dvector_test'
+            feat_dir = '/share/nas165/chengsam/voxceleb2020_prog/fully_supervised_speaker_verification/voxceleb_trainer/data/Dvector_dev'
+
             if feat_dir == '':
                 feats[file]     = ref_feat
             else:
                 filedict[file]  = filename
-                if not self.feat_keep:
-                    torch.save(ref_feat,os.path.join(feat_dir,filename))
+                feats[file]     = torch.load(os.path.join(feat_dir, filename))
 
-                telapsed = time.time() - tstart
-        # if idx % print_interval == 0:
-        #     sys.stdout.write("\rReading %d: %.2f Hz, embed size %d"%(idx,idx/telapsed,ref_feat.size()[1]));
+        print('Read all score')
 
-        print('')
+        all_score_dir = '/share/nas165/chengsam/voxceleb2020_prog/fully_supervised_speaker_verification/voxceleb_trainer/resnet_all_pair_scroe/dev_score_base.txt' 
+        with open(all_score_dir) as listfile:
+            while True:
+                line = listfile.readline();
+                if (not line): #  or (len(all_scores)==1000) 
+                    break;
+                data = line.split();
+                if data[1] in self.all_score_list:
+                    self.all_score_list[data[1]].update({data[2]: data[0]})
+                else:
+                    self.all_score_list.update({data[1]:{data[2]: data[0]}})
+        print('Read all score Done')
         all_scores = [];
         all_plda_scores = [];
         all_labels = [];
@@ -249,60 +131,191 @@ class SpeakerNet(nn.Module):
 
         ## Read files and compute all scores
         print("Computing!");
-        plda = PLDALoader()
-        plda.read_score('vox_Xvector/vox2_dev_x_vector/plda_dev_score')
+        self.feats_global = feats
+        self.setfiles_global = setfiles
+
+        # cpus = os.cpu_count() 
+        # print("# of cpu: "+str(cpus))
+        # p=mp.Pool(cpus)
 
         for idx, line in tqdm(enumerate(lines), ascii=True):
-
             data = line.split();
-            # ref_id = data[1].replace('/','-').replace('.wav','')
-            # com_id = data[2].replace('/','-').replace('.wav','')
-            # X_ref_feat = torch.tensor(numpy.array(xv.get_xvector(ref_id))).cuda()
-            # X_com_feat = torch.tensor(numpy.array(xv.get_xvector(com_id))).cuda()
-
-            plda_id = data[1].replace('/','-').replace('.wav','')+'-'+data[2].replace('/','-').replace('.wav','')
-            if feat_dir == '':
-                ref_feat = feats[data[1]].cuda()
-                com_feat = feats[data[2]].cuda()
-            else:
-                ref_feat = torch.load(os.path.join(feat_dir,filedict[data[1]])).cuda()
-                com_feat = torch.load(os.path.join(feat_dir,filedict[data[2]])).cuda()
-
-            if self.__test_normalize__:
-                ref_feat = F.normalize(ref_feat, p=2, dim=1)
-                com_feat = F.normalize(com_feat, p=2, dim=1)
-            
-            plda_score = plda.get_plda_score(plda_id)
-
-            dist = F.pairwise_distance(ref_feat.unsqueeze(-1).expand(-1,-1,num_eval), com_feat.unsqueeze(-1).expand(-1,-1,num_eval).transpose(0,2)).detach().cpu().numpy();
-
-            score = -1 * numpy.mean(dist);
-
-            all_scores.append(score);  
-            all_plda_scores.append(plda_score);  
+            score = float(self.all_score_list[data[1]][data[2]])
+            score = self.score_reliable(score, data[1], data[2])
+            all_scores.append(float(score));  
             all_labels.append(int(data[0]));
 
-            if idx % print_interval == 0:
-                telapsed = time.time() - tstart
-                # sys.stdout.write("\rComputing %d: %.2f Hz"%(idx,idx/telapsed));
-                # sys.stdout.flush();
+        # for _ in tqdm(p.istarmap(self.computing_thread, enumerate(lines)), total=len(lines)):pass
+        # p.close()
+        # p.join()
 
-        if feat_dir != '':
-            if not self.feat_keep:
-                print(' Deleting temporary files.')
-                shutil.rmtree(feat_dir)
+        # cpus = os.cpu_count() 
+        # print("# of cpu: "+str(cpus))
+        # p=mp.Pool(cpus)
+        # for _ in tqdm(p.istarmap(self.thread_score, enumerate(setfiles)), total=len(setfiles)):pass
+        # p.close()
+        # p.join()
 
         print('\n')
 
-        all_N_scores = self.max_min_normalization(all_scores)
-        all_N_plda_scores = self.max_min_normalization(all_plda_scores)
-        all_scores = (0.5*all_N_scores + 0.5*all_N_plda_scores)# .tolist()
-
         print(' Computing Done! ')
         return (all_scores, all_labels);
+        
+    def computing_thread(self, idx, line):
+        data = line.split();
+        score = float(self.all_score_list[data[1]][data[2]])
+        score = self.score_reliable(score, data[1], data[2])
+        self.all_scores.append(float(score));  
+        self.all_labels.append(int(data[0]));
+
+    def score_reliable(self, score, ref, com):
+
+# 貼著第一個錯誤做
+#         right               left
+# 100%    -0.85387694835663   -1.37349641323089 
+# 99.50%  -0.97980618476868   -1.06000936031341 
+# 99%     -1.01144731044769   -1.02438473701477 
+# 98.50%  -1.03028070926666   -1.00153410434722 
+# 98%     -1.04567658901214   -0.98936873674393 
+# 97%     -1.06901240348815   -0.97086042165756 
+# 96%     -1.08683192729949   -0.95614105463028 
+# 95%     -1.10199260711669   -0.94331932067871 
+
+
+        th = -0.85387694835663 # 100%
+        # th = -0.97980618476868 # 99.50%
+        # th = -1.01144731044769 # 99%
+        # th = -1.03028070926666 # 98.50%
+        # th = -1.04567658901214 # 98%
+        low_th = -1.37349641323089 # 100%
+        # low_th = -0.94331932067871 # 95%
+        ori_eer_th = -1.0168 # 原始EER判斷正確與否的域值
+        new_score = score
+        # print(score)
+        if 1 > score > -10000000 :
+        # if th > score > ori_eer_th:
+
+            # k={'Apple':400,'Joey':600,'Bella':50,'2th King':10000}
+            # print(sorted(k.items(), key=lambda x:x[1]))
+            # output:[('Bella', 50), ('Apple', 400), ('Joey', 600), ('2th King', 10000)]
+
+            sort_list = sorted(self.all_score_list[ref].items(), key=lambda x:x[1], reverse=True)
+            ref_feat = self.feats_global[ref]
+            com_feat = self.feats_global[com]
+            # ref_feat = F.normalize(ref_feat, p=2, dim=1)
+            # com_feat = F.normalize(com_feat, p=2, dim=1)
+            counter = 0
+            top_n = 20
+            dv = []
+            dn = []
+            for doc in sort_list:
+                counter += 1
+                if counter < top_n+1:
+                    v = self.feats_global[doc[0]]
+                    # v = F.normalize(v, p=2, dim=1)
+                    dv.append(v)
+                else:
+                    v = self.feats_global[doc[0]]
+                    # v = F.normalize(v, p=2, dim=1)
+                    dn.append(v)
+            dv = torch.stack(dv, dim=0)
+            dn = torch.stack(dn, dim=0)
+            # new_q = qv + 0.75*np.sum(dv,axis=0)/self.D - 0.15*np.sum(dv,axis=0)/len(Dn_doc)
+
+            new_ref_feat = 1*ref_feat + 0.005*(dv.sum(dim = 0))/top_n - 0.0015*(dn.sum(dim = 0))/(len(sort_list)-top_n)
+            # new_ref_feat = F.normalize(new_ref_feat, p=2, dim=1)
+
+
+            # max_like = max(self.all_score_list[ref], key = self.all_score_list[ref].get)
+            # min_like = min(self.all_score_list[ref], key = self.all_score_list[ref].get)
+            # max_like_com = max(self.all_score_list[com], key = self.all_score_list[com].get)
+            # min_like_com = min(self.all_score_list[com], key = self.all_score_list[com].get)
+            # ref_feat = self.feats_global[ref]
+            # com_feat = self.feats_global[com]
+            # TF_feat = self.feats_global[max_like]
+            # IDF_feat = self.feats_global[min_like]
+            # TF_com_feat = self.feats_global[max_like_com]
+            # IDF_com_feat = self.feats_global[min_like_com]
+            # if self.__test_normalize__:
+            #     ref_feat = F.normalize(ref_feat, p=2, dim=1)
+            #     com_feat = F.normalize(com_feat, p=2, dim=1)
+            #     TF_feat = F.normalize(TF_feat, p=2, dim=1)
+            #     IDF_feat = F.normalize(IDF_feat, p=2, dim=1)
+            #     TF_com_feat = F.normalize(TF_com_feat, p=2, dim=1)
+            #     IDF_com_feat = F.normalize(IDF_com_feat, p=2, dim=1)
+
+
+
+
+            # print(ori_feat.size())
+            # a = 1
+            # new_ref_feat = (ref_feat + 0.75*TF_feat - 0.15*IDF_feat)
+            # new_com_feat = (com_feat + 0.75*TF_com_feat - 0.15*IDF_com_feat)
+            # new_feat = ref_feat + 0.075*TF_feat 
+
+            # dist = F.pairwise_distance(new_ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).numpy();
+            # dist = F.pairwise_distance(new_ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy();
+            dist = F.cosine_similarity(new_ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).numpy();
+            
+            new_score = 1 * numpy.mean(dist);
+
+
+
+
+        #     # print(new_score)
+        #     # quit()
+        #     # self.feats_global
+        #     # a = 0.8
+        #     # new_score = a*score + (1-a)*new_score
+
+
+
+        # ref_feat = self.feats_global[ref]
+        # com_feat = self.feats_global[com]
+        # # com_feat = F.normalize(com_feat, p=2, dim=1)
+        # # ref_feat = F.normalize(ref_feat, p=2, dim=1)
+        
+        # # dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).numpy();
+        # dist = F.cosine_similarity(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).numpy();
+        # new_score = 1 * numpy.mean(dist);
+
+        return new_score
+
+    def thread_score(self, idx, file_name):
+        ref_file = file_name
+        ref_idx = idx
+        
+        if idx < 50000: return # sota
+        with open('/home/chengsam/sota_test_score/test_score_'+str(idx)+'.txt', 'w') as out:
+            for idx, com_file in enumerate(self.setfiles_global):
+                if idx <= ref_idx: continue
+                feat_dir = ''
+                if feat_dir == '':
+                    ref_feat = self.feats_global[ref_file]
+                    com_feat = self.feats_global[com_file]
+                else:
+                    print('ERROR')
+                if self.__test_normalize__:
+                    ref_feat = F.normalize(ref_feat, p=2, dim=1)
+                    com_feat = F.normalize(com_feat, p=2, dim=1)
+                dist = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).numpy();
+                score = -1 * numpy.mean(dist);
+                out.write("%s %s %s\n"%(score, ref_file, com_file))
+                out.write("%s %s %s\n"%(score, com_file, ref_file))
+
 
     def max_min_normalization(self, x):
         return numpy.array([(float(i)-min(x))/float(max(x)-min(x)) for i in x])
+
+    def save_score(self, sc, ref, com):
+        with open('dev_score.txt', 'w') as out:
+            for query in order:
+                self.recomment[query].sort(key=lambda k: k[1])
+                out.write("Query %s    %s %s\n"%(counter, query, len(self.recomment[query])))
+                for doc in self.recomment[query][::-1]:
+                    out.write("%s %s\n"%(doc[0],doc[1]))
+                out.write("\n")
+                counter += 1
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Update learning rate
     ## ===== ===== ===== ===== ===== ===== ===== =====
@@ -329,21 +342,5 @@ class SpeakerNet(nn.Module):
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
     def loadParameters(self, path):
-
-        self_state = self.state_dict();
-        loaded_state = torch.load(path);
-        for name, param in loaded_state.items():
-            origname = name;
-            if name not in self_state:
-                name = name.replace("module.", "");
-
-                if name not in self_state:
-                    print("%s is not in the model."%origname);
-                    continue;
-
-            if self_state[name].size() != loaded_state[origname].size():
-                print("Wrong parameter length: %s, model: %s, loaded: %s"%(origname, self_state[name].size(), loaded_state[origname].size()));
-                continue;
-
-            self_state[name].copy_(param);
+        print("No Model")
 

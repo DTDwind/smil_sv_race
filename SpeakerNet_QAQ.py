@@ -263,8 +263,9 @@ class SpeakerNet(nn.Module):
 
         ## Read files and compute all scores
         print("Computing!");
+        counter = 0 
         for idx, line in tqdm(enumerate(lines), ascii=True):
-
+            counter += 1
             data = line.split();
 
             if feat_dir == '':
@@ -277,14 +278,47 @@ class SpeakerNet(nn.Module):
             if self.__test_normalize__:
                 ref_feat = F.normalize(ref_feat, p=2, dim=1)
                 com_feat = F.normalize(com_feat, p=2, dim=1)
+            print(ref_feat.unsqueeze(-1).size()) # torch.Size([10, 512, 1])
+            print(com_feat.unsqueeze(-1).transpose(0,2).size()) # torch.Size([1, 512, 10])
+            quit()
 
-            dist = F.pairwise_distance(ref_feat.unsqueeze(-1).expand(-1,-1,num_eval), com_feat.unsqueeze(-1).expand(-1,-1,num_eval).transpose(0,2)).detach().cpu().numpy();
+            # if counter == 1:
+            #     a = ref_feat
+            #     b = com_feat
+            #     continue
+            # c = ref_feat
+            # d = com_feat
+
+            
+            
+            # dist = F.pairwise_distance(ref_feat.unsqueeze(-1).expand(-1,-1,num_eval), com_feat.unsqueeze(-1).expand(-1,-1,num_eval).transpose(0,2)).detach().cpu().numpy();
+            # EER 2.3436
+
+
+
+            dist = F.pdist(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy();
+            
+
+            # dist1 = F.pairwise_distance(ref_feat.unsqueeze(-1), com_feat.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy();
+            # dist2 = F.pairwise_distance(a.unsqueeze(-1), b.unsqueeze(-1).transpose(0,2)).detach().cpu().numpy();
+            # feat = torch.stack(feat,dim=1).squeeze()
+            # e = torch.stack([a,c],dim=1).squeeze()
+            # f = torch.stack([b,d],dim=1).squeeze()
+            # print(e.size())
+            
+            # score1 = -1 * numpy.mean(dist1);
+            # score2 = -1 * numpy.mean(dist2);
+            # print(score1)
+            # print(score2)
+            # dist3 = F.pairwise_distance(e.unsqueeze(-1), f.unsqueeze(-1).transpose(0,2));
+            # print(dist3.size())
+            # quit()
 
             score = -1 * numpy.mean(dist);
 
             all_scores.append(score);  
             all_labels.append(int(data[0]));
-
+ 
             if idx % print_interval == 0:
                 telapsed = time.time() - tstart
                 # sys.stdout.write("\rComputing %d: %.2f Hz"%(idx,idx/telapsed));

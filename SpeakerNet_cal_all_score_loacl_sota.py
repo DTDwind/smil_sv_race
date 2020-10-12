@@ -134,8 +134,9 @@ class SpeakerNet(nn.Module):
         ref_file = file_name
         ref_idx = idx
         
-        if idx < 52700: return # sota
-        with open('/home/chengsam/sota_test_score/test_score_'+str(idx)+'.txt', 'w') as out:
+        if idx < 47000: return # sota
+        if idx > 50000: return
+        with open('/home/chengsam/sota_test_score_4w7_to_5w/test_score_'+str(idx)+'.txt', 'w') as out:
             for idx, com_file in enumerate(self.setfiles_global):
                 if idx <= ref_idx: continue
                 feat_dir = ''

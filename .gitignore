@@ -119,3 +119,6 @@ vox_Xvector
 resnet_all_pair_scroe
 dev_score_test
 test_score*
+All_test_score
+top_100_merge
+merge_set

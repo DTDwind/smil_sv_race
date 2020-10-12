@@ -132,6 +132,9 @@ elif args.SpeakerNet_type == 'SpeakerNet_cal_all_score_loacl_sh87':
 elif args.SpeakerNet_type == 'SpeakerNet_cal_all_score_loacl_esp2080':
     from SpeakerNet_cal_all_score_loacl_esp2080 import SpeakerNet
     load_all_wav =  False
+elif args.SpeakerNet_type == 'SpeakerNet_expansion_combine_PLDA':
+    from SpeakerNet_expansion_combine_PLDA import SpeakerNet
+    load_all_wav =  False
 
 
 
@@ -161,6 +164,11 @@ for ii in range(0,it-1):
 if args.eval == True:
         
     sc, lab = s.evaluateFromListSave(args.test_list, print_interval=100, feat_dir=feat_save_path, test_path=args.test_path)
+
+    # with open('expansion_score_a0_b1_c0_D.txt', 'w') as out:
+    #     for idx in range(len(sc)):
+    #         out.write("%s %s\n"%(sc[idx], lab[idx]))
+
     result = tuneThresholdfromScore(sc, lab, [1, 0.1]);
     print('EER %2.4f'%result[1])
     fnrs, fprs, thresholds = ComputeErrorRates(sc, lab) #fnrs->False negative rate ; fprs->False positive rate

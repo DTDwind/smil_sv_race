@@ -134,9 +134,9 @@ class SpeakerNet(nn.Module):
         ref_file = file_name
         ref_idx = idx
         
-        if idx < 9600: return # amd
-        if idx > 20000: return
-        with open('/home/chengsam/amd3950x_test_score/test_score_'+str(idx)+'.txt', 'w') as out:
+        if idx < 42000: return # amd
+        if idx > 50000: return
+        with open('/home/chengsam/amd3950x_test_score_4w2_to_5w/test_score_'+str(idx)+'.txt', 'w') as out:
             for idx, com_file in enumerate(self.setfiles_global):
                 if idx <= ref_idx: continue
                 feat_dir = ''

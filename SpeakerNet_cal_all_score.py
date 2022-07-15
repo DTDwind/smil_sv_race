@@ -30,128 +30,16 @@ class SpeakerNet(nn.Module):
     def __init__(self, max_frames, lr = 0.0001, margin = 1, scale = 1, hard_rank = 0, hard_prob = 0, model="alexnet50", nOut = 512, nSpeakers = 1000, optimizer = 'adam', encoder_type = 'SAP', normalize = True, trainfunc='contrastive', **kwargs):
         super(SpeakerNet, self).__init__();
 
-        # self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min=0.0, f_max=8000, pad=0, n_mels=40)
-
-
         argsdict = {'nOut': nOut, 'encoder_type':encoder_type}
-
-        # SpeakerNetModel = importlib.import_module('models.'+model).__getattribute__(model)
-        # self.__S__ = SpeakerNetModel(**argsdict).cuda();
         self.sigmoid = nn.Sigmoid()
-        # self.fc = th_Fc(nOut ,nOut).cuda()
-        # self.lstm = rnn_LSTM(nOut, nOut).cuda();
-        # self.fine_tune_DNN = th_Fc(nOut, nOut).cuda();
 
         self.__test_normalize__     = True
         self.setfiles_global = ''
         self.feats_global = ''
-        # if trainfunc == 'angleproto':
-        #     self.__L__ = AngleProtoLoss().cuda()
-        #     self.__train_normalize__    = True
-        #     self.__test_normalize__     = True
-        # elif trainfunc == 'ge2e':
-        #     self.__L__ = GE2ELoss().cuda()
-        #     self.__train_normalize__    = True
-        #     self.__test_normalize__     = True
-        # elif trainfunc == 'amsoftmax':
-        #     self.__L__ = AMSoftmax(in_feats=nOut, n_classes=nSpeakers, m=margin, s=scale).cuda()
-        #     self.__train_normalize__    = False
-        #     self.__test_normalize__     = True
-        # elif trainfunc == 'aamsoftmax':
-        #     self.__L__ = AAMSoftmax(in_feats=nOut, n_classes=nSpeakers, m=margin, s=scale).cuda()
-        #     self.__train_normalize__    = False
-        #     self.__test_normalize__     = True
-        # elif trainfunc == 'softmax':
-        #     self.__L__ = SoftmaxLoss(in_feats=nOut, n_classes=nSpeakers).cuda()
-        #     self.__train_normalize__    = False
-        #     self.__test_normalize__     = True
-        # elif trainfunc == 'proto':
-        #     self.__L__ = ProtoLoss().cuda()
-        #     self.__train_normalize__    = False
-        #     self.__test_normalize__     = False
-        # elif trainfunc == 'triplet':
-        #     self.__L__ = PairwiseLoss(loss_func='triplet', hard_rank=hard_rank, hard_prob=hard_prob, margin=margin).cuda()
-        #     self.__train_normalize__    = True
-        #     self.__test_normalize__     = True
-        # elif trainfunc == 'contrastive':
-        #     self.__L__ = PairwiseLoss(loss_func='contrastive', hard_rank=hard_rank, hard_prob=hard_prob, margin=margin).cuda()
-        #     self.__train_normalize__    = True
-        #     self.__test_normalize__     = True
-        # else:
-        #     raise ValueError('Undefined loss.')
-
-        # if optimizer == 'adam':
-        #     # self.__optimizer__ = torch.optim.Adam(self.parameters(), lr = lr);
-        #     # 設定學習率SpeakerNet設定'lr':1e-6、全連結層'lr':0.001
-        #     self.__optimizer__ = torch.optim.Adam([{'params':self.__S__.parameters(),'lr':0.001},
-        #                                         #    {'params':self.fine_tune_DNN.parameters(),'lr':0.001},
-        #                                            {'params':self.__L__.parameters(),'lr':0.001}
-        #                                           ]);
-        #     # https://blog.csdn.net/qq_34914551/article/details/87699317
-        # elif optimizer == 'sgd':
-        #     self.__optimizer__ = torch.optim.SGD(self.parameters(), lr = lr, momentum = 0.9, weight_decay=5e-5);
-        # else:
-        #     raise ValueError('Undefined optimizer.')
         
         self.__max_frames__ = max_frames;
         self.feat_keep = False
 
-    ## ===== ===== ===== ===== ===== ===== ===== =====
-    ## Train network
-    ## ===== ===== ===== ===== ===== ===== ===== =====
-
-    # def train_network(self, loader):
-
-    #     self.train();
-
-    #     stepsize = loader.batch_size;
-
-    #     counter = 0;
-    #     index   = 0;
-    #     loss    = 0;
-    #     top1    = 0     # EER or accuracy
-
-    #     criterion = torch.nn.CrossEntropyLoss()
-    #     for data, data_label in loader:
-           
-    #         tstart = time.time()
-
-    #         self.zero_grad();
-            
-    #         feat = []
-            
-    #         for inp in data:
-                
-    #             outp      = self.__S__.forward(inp.cuda())
-                
-
-    #             if self.__train_normalize__:
-    #                 outp   = F.normalize(outp, p=2, dim=1)
-    #             feat.append(outp)
-
-    #         feat = torch.stack(feat,dim=1).squeeze()
-            
-    #         label   = torch.LongTensor(data_label).cuda()
-    #         nloss, prec1 = self.__L__.forward(feat,label)
-
-    #         loss    += nloss.detach().cpu();
-    #         top1    += prec1
-    #         counter += 1;
-    #         index   += stepsize;
-
-    #         nloss.backward(); # ------------ backward 更新參數
-    #         self.__optimizer__.step();
-
-    #         telapsed = time.time() - tstart
-
-    #         sys.stdout.write("\rProcessing (%d/%d) "%(index, loader.nFiles));
-    #         sys.stdout.write("Loss %f EER/T1 %2.3f%% - %.2f Hz "%(loss/counter, top1/counter, stepsize/telapsed));
-    #         sys.stdout.write("Q:(%d/%d)"%(loader.qsize(), loader.maxQueueSize));
-    #         sys.stdout.flush();
-
-    #     sys.stdout.write("\n");
-        
-    #     return (loss/counter, top1/counter);
 
     ## ===== ===== ===== ===== ===== ===== ===== =====
     ## Read data from list
@@ -207,8 +95,8 @@ class SpeakerNet(nn.Module):
 
                 data = line.split();
 
-                files.append(data[0])
-                files.append(data[1]) 
+                files.append(data[1])
+                files.append(data[2]) 
                 lines.append(line)
 
         setfiles = list(set(files))
@@ -221,9 +109,9 @@ class SpeakerNet(nn.Module):
             # if not self.feat_keep:
             #     inp1 = loadWAV(os.path.join(test_path,file), self.__max_frames__, evalmode=True, num_eval=num_eval).cuda()
             #     ref_feat = self.__S__.forward(inp1).detach().cpu()
-            filename = '%06d.wav'%idx
-            # filename = '%06d.feat.pt'%idx
-            feat_dir = 'data/Dvector_test/'
+            # filename = '%06d.wav'%idx
+            filename = '%06d.feat.pt'%idx
+            feat_dir = 'data/ResNetSE34L_feat_vox1_test/'
             if feat_dir == '':
                 feats[file]     = ref_feat
             else:
@@ -299,7 +187,7 @@ class SpeakerNet(nn.Module):
     def thread_score(self, idx, file_name):
         ref_file = file_name
         ref_idx = idx
-        with open('test_score2/test_score_'+str(idx)+'.txt', 'w') as out:
+        with open('test_score/test_score_'+str(idx)+'.txt', 'w') as out:
             for idx, com_file in enumerate(self.setfiles_global):
                 if idx <= ref_idx: continue
                 feat_dir = ''
@@ -356,20 +244,4 @@ class SpeakerNet(nn.Module):
 
     def loadParameters(self, path):
         print("No Model")
-        # self_state = self.state_dict();
-        # loaded_state = torch.load(path);
-        # for name, param in loaded_state.items():
-        #     origname = name;
-        #     if name not in self_state:
-        #         name = name.replace("module.", "");
-
-        #         if name not in self_state:
-        #             print("%s is not in the model."%origname);
-        #             continue;
-
-        #     if self_state[name].size() != loaded_state[origname].size():
-        #         print("Wrong parameter length: %s, model: %s, loaded: %s"%(origname, self_state[name].size(), loaded_state[origname].size()));
-        #         continue;
-
-        #     self_state[name].copy_(param);
 

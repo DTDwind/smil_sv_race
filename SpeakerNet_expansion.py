@@ -99,10 +99,12 @@ class SpeakerNet(nn.Module):
         print("Reading File");
         print("setfiles len: "+str(len(setfiles)))
         for idx, file in tqdm(enumerate(setfiles), ascii=True):
-            filename = '%06d.wav'%idx
+            # filename = '%06d.wav'%idx
+            filename = '%06d.feat.pt'%idx
 
             # feat_dir = '/share/nas165/chengsam/voxceleb2020_prog/fully_supervised_speaker_verification/voxceleb_trainer/data/Dvector_test'
-            feat_dir = '/share/nas165/chengsam/voxceleb2020_prog/fully_supervised_speaker_verification/voxceleb_trainer/data/Dvector_dev'
+            # feat_dir = '/share/nas165/chengsam/voxceleb2020_prog/fully_supervised_speaker_verification/voxceleb_trainer/data/Dvector_dev'
+            feat_dir = '/mnt/HDD/HDD2/DTDwind/smil_sv_race/data/ResNetSE34L_feat_vox1_test'
 
             if feat_dir == '':
                 feats[file]     = ref_feat
@@ -112,7 +114,7 @@ class SpeakerNet(nn.Module):
 
         print('Read all score')
 
-        all_score_dir = '/share/nas165/chengsam/voxceleb2020_prog/fully_supervised_speaker_verification/voxceleb_trainer/resnet_all_pair_scroe/dev_score_base.txt' 
+        all_score_dir = '/mnt/HDD/HDD2/DTDwind/smil_sv_race/test_score/vox1_test_score.txt' 
         with open(all_score_dir) as listfile:
             while True:
                 line = listfile.readline();

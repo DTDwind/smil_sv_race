@@ -203,8 +203,10 @@ class SpeakerNet(nn.Module):
 
                 data = line.split();
 
-                files.append(data[0])
-                files.append(data[1]) # 為了test而修改
+                # files.append(data[0])
+                # files.append(data[1]) # 為了test而修改
+                files.append(data[1])
+                files.append(data[2]) # 為了dev(test)而修改
                 lines.append(line)
 
         setfiles = list(set(files))
@@ -212,13 +214,18 @@ class SpeakerNet(nn.Module):
 
         ## Save all features to file
         print("Reading File");
+        
         for idx, file in tqdm(enumerate(setfiles), ascii=True):
             if not self.feat_keep:
                 inp1 = loadWAV(os.path.join(test_path,file), self.__max_frames__, evalmode=True, num_eval=num_eval).cuda()
                 ref_feat = self.__S__.forward(inp1).detach().cpu()
-            filename = '%06d.wav'%idx
-            # filename = '%06d.feat.pt'%idx
-            feat_dir = 'data/Dvector_test/'
+            # filename = '%06d.wav'%idx
+
+            # print("QAQ")
+            # print(filename)
+            # quit()
+            filename = '%06d.feat.pt'%idx
+            feat_dir = 'data/ResNetSE34L_feat_vox1_test/'
             if feat_dir == '':
                 feats[file]     = ref_feat
             else:
